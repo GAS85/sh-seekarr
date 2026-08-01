@@ -1,12 +1,14 @@
 # sh-seekarr.sh
 
-A lightweight, dependency-free replacement for the [seekarr](https://github.com/scottrobertson/seekarr/tree/main) project.
+A lightweight, dependency-free replacement for the [seekarr](https://github.com/scottrobertson/seekarr/) and [seekarr](https://github.com/tumeden/seekarr) projects.
 
 It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items — instead of hammering every wanted item at once.
 
 ## Why not just use seekarr?
 
 The Typescript-based `seekarr` project loads node image and packages that is not memory efficient at all, only idle mode requeues 50 MBs of RAM and 150+ MB docker image.
+
+The Python-based `seekarr` kind of the same and is overloaded with functions and UI.
 
 ## Requirements
 
