@@ -189,3 +189,7 @@ SHSEEKARR_RADARR_APIKEY=yyyy
 - **Nothing gets searched even though Sonarr/Radarr shows missing items** — check `SHSEEKARR_MONITORED_ONLY`; unmonitored items are excluded by default.
 - **Script exits immediately with an "Invalid ..." error** — one of the env vars (`SHSEEKARR_SEARCH_MODE`, `SHSEEKARR_LIMIT`, `SHSEEKARR_SONARR_LIMIT`, `SHSEEKARR_RADARR_LIMIT`, `SHSEEKARR_MONITORED_ONLY`) has an invalid value — the error message names which one and what value it received.
 - **"Request to wanted/missing (page 1) failed"** — check the app's URL/API key, and that the instance is reachable from where the script runs.
+
+## Donation
+
+[Buy me a 🍺](https://www.paypal.com/paypalme/GeorgiySitnikov)

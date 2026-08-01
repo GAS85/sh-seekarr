@@ -170,9 +170,9 @@ api_post_command() {
     "${1%/}/api/v3/command"
 }
 
-ConnectivityCheck () {
+ConnectivityCheck() {
   # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
-  apiCall="$(curl -fsL -m 3 --retry 1 -w \n%{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3" 2>&1 || true)"
+  apiCall="$(curl -fsL -m 3 --retry 1 -w \n%{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || true)"
 
 	connectivityCheck=${apiCall: -3}
 
@@ -188,7 +188,6 @@ ConnectivityCheck () {
 
 }
 
-
 # ---- Fetch wanted items into a file, one "id<TAB>label" per line ----------
 
 fetch_wanted_ids() {
@@ -197,13 +196,13 @@ fetch_wanted_ids() {
 
   : >"$out_file"
 
+  ConnectivityCheck "$base_url" "$apikey"
+
   while (((page - 1) * SHSEEKARR_PAGE_SIZE < total_records)); do
     qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}"
     if [[ "$MONITORED_ONLY" == "true" ]]; then
       qs+="&monitored=true"
     fi
-
-    ConnectivityCheck "$base_url" "$apikey"
 
     if ! resp="$(api_get "$base_url" "$apikey" "/${endpoint}${qs}")"; then
       log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
@@ -239,7 +238,7 @@ process_app() {
   local id_field="$6" command_name="$7" extra_qs="$8" record_jq="$9"
 
   if [[ -z "$base_url" || -z "$apikey" ]]; then
-    log INFO "Skipping ${app}: SHSEEKARR_${app^^}_URL / SHSEEKARR_${app^^}_APIKEY not configured."
+    log WARNING "Skipping ${app}: SHSEEKARR_${app^^}_URL / SHSEEKARR_${app^^}_APIKEY not configured."
     return 0
   fi
 
