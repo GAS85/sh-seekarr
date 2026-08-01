@@ -2,6 +2,8 @@
 #
 # sh-seekarr.sh - lightweight replacement for the "seekarr" project.
 #
+# https://github.com/GAS85/sh-seekarr
+#
 # Queries Sonarr and/or Radarr for missing / cutoff-unmet (upgrade) items,
 # randomly selects up to a configurable limit, and triggers a search for
 # just those items. Designed to keep memory low: only numeric ids are ever
@@ -168,6 +170,25 @@ api_post_command() {
     "${1%/}/api/v3/command"
 }
 
+ConnectivityCheck () {
+  # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
+  apiCall="$(curl -fsL -m 3 --retry 1 -w \n%{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3" 2>&1 || true)"
+
+	connectivityCheck=${apiCall: -3}
+
+	# This is success
+	[[ "$connectivityCheck" == "200" ]] && return
+
+	# This is an error
+	[[ "$connectivityCheck" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
+	[[ "$connectivityCheck" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
+	[[ "$connectivityCheck" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/v3"; exit 1; }
+	[[ "$connectivityCheck" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/v3"; exit 1 ; }
+	[[ "$connectivityCheck" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
+
+}
+
+
 # ---- Fetch wanted items into a file, one "id<TAB>label" per line ----------
 
 fetch_wanted_ids() {
@@ -181,6 +202,8 @@ fetch_wanted_ids() {
     if [[ "$MONITORED_ONLY" == "true" ]]; then
       qs+="&monitored=true"
     fi
+
+    ConnectivityCheck "$base_url" "$apikey"
 
     if ! resp="$(api_get "$base_url" "$apikey" "/${endpoint}${qs}")"; then
       log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
@@ -298,7 +321,7 @@ process_app() {
   log INFO "Triggering ${command_name} on ${app} for ${selected_count} item(s)..."
   local resp
   if resp="$(api_post_command "$base_url" "$apikey" "$body")"; then
-    echo "$resp" | jq -c '{id, name, status}' 2>/dev/null || log INFO "$resp"
+    log INFO "$(echo "$resp" | jq -c '{id, name, status}' 2>/dev/null)"
   else
     log WARNING "Failed to trigger search command for ${app}." >&2
   fi
