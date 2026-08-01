@@ -1,0 +1,191 @@
+# sh-seekarr.sh
+
+A lightweight, dependency-free replacement for the [seekarr](https://github.com/scottrobertson/seekarr/tree/main) project.
+
+It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items — instead of hammering every wanted item at once.
+
+## Why not just use seekarr?
+
+The Typescript-based `seekarr` project loads node image and packages that is not memory efficient at all, only idle mode requeues 50 MBs of RAM and 150+ MB docker image.
+
+## Requirements
+
+- `bash`
+- `curl`
+- `jq`
+- coreutils (`sort`, `head`, `cut`, `wc` — present on virtually every Linux/macOS system)
+
+No Python, no persistent state, no database.
+
+## How it works
+
+1. For each configured app (Sonarr, Radarr, or both), pages through the `wanted/missing` and/or `wanted/cutoff` endpoints, depending on `SHSEEKARR_SEARCH_MODE`.
+2. Optionally filters to monitored-only items, both via the API's `monitored` query param and a client-side re-check (in case the Sonarr/Radarr version being talked to ignores the query param).
+3. Deduplicates and randomly shuffles the resulting id list (`sort -uR`).
+4. Takes the first `SHSEEKARR_LIMIT` (or per-app override) items.
+5. Logs what was picked, by name — e.g. `Breaking Bad S04E04` for Sonarr, `Heat (1995)` for Radarr.
+6. Triggers a single search command (`EpisodeSearch` / `MoviesSearch`) for exactly those items — or, if `SHSEEKARR_DRY_RUN=true`, just prints what *would* be sent.
+
+An app is skipped automatically if its URL or API key isn't configured, so you can safely run this with only Sonarr, only Radarr, or both.
+
+## Quick start
+
+```bash
+export SHSEEKARR_SONARR_URL="http://localhost:8989"
+export SHSEEKARR_SONARR_APIKEY="your-sonarr-api-key"
+export SHSEEKARR_RADARR_URL="http://localhost:7878"
+export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
+
+export SHSEEKARR_SEARCH_MODE="both"
+export SHSEEKARR_MONITORED_ONLY="true"
+export SHSEEKARR_LIMIT="10"
+
+# Always try a dry run first
+export SHSEEKARR_DRY_RUN="true"
+./seekarr.sh
+```
+
+Once you're happy with what it picked, set `SHSEEKARR_DRY_RUN=false` (or unset it) and run it for real.
+
+Run it on a schedule (cron, systemd timer, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
+
+## Configuration reference
+
+All configuration is via environment variables, prefixed `SHSEEKARR_`.
+
+### Connection
+
+| Variable | Required | Default | Description |
+|----------|:--------:|---------|-------------|
+| `SHSEEKARR_APPS` | No | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr` and `radarr`. |
+| `SHSEEKARR_SONARR_URL` | If using Sonarr | `http://sonarr:8989` | Base URL of your Sonarr instance. |
+| `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General). |
+| `SHSEEKARR_RADARR_URL` | If using Radarr | `http://radarr:7878` | Base URL of your Radarr instance. |
+| `SHSEEKARR_RADARR_APIKEY` | If using Radarr | *(empty)* | Radarr API key (Settings → General). |
+
+If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error — so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
+
+### Search behavior
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `SHSEEKARR_SEARCH_MODE` | `missing` | `missing` — only unaired/missing items (`wanted/missing`).<br>`upgrades` — only cutoff-unmet items (`wanted/cutoff`).<br>`both` / `all` — union of both, deduplicated by id. |
+| `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. |
+| `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
+| `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
+| `SHSEEKARR_RADARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Radarr only. |
+| `SHSEEKARR_PAGE_SIZE` | `100` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
+
+**Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app — e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
+
+### Output & safety
+
+| Variable | Default | Description |
+|--------------------------|---------|--------------|
+| `SHSEEKARR_DRY_RUN` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, prints the exact command payload that *would* be sent to Sonarr/Radarr, without actually triggering a search. |
+| `SHSEEKARR_LOG_FORMAT` | `text` | `text` for human-readable log lines, `json` for one-JSON-object-per-line structured logs (useful for log aggregators). |
+
+## Example: run only Sonarr, upgrades only, higher limit
+
+```bash
+SHSEEKARR_APPS="sonarr" \
+SHSEEKARR_SONARR_URL="http://localhost:8989" \
+SHSEEKARR_SONARR_APIKEY="xxxx" \
+SHSEEKARR_SEARCH_MODE="upgrades" \
+SHSEEKARR_LIMIT="10" \
+./seekarr.sh
+```
+
+## Example: different limits per app
+
+```bash
+SHSEEKARR_SONARR_URL="http://localhost:8989" SHSEEKARR_SONARR_APIKEY="xxxx" \
+SHSEEKARR_RADARR_URL="http://localhost:7878" SHSEEKARR_RADARR_APIKEY="yyyy" \
+SHSEEKARR_SEARCH_MODE="both" \
+SHSEEKARR_LIMIT="10" \
+SHSEEKARR_SONARR_LIMIT="3" \
+./seekarr.sh
+```
+
+This searches up to 3 Sonarr items and up to 10 Radarr items (Radarr falls
+back to the global `SHSEEKARR_LIMIT` since `SHSEEKARR_RADARR_LIMIT` isn't
+set).
+
+## Example: JSON logging for log aggregation
+
+```bash
+SHSEEKARR_LOG_FORMAT="json" ./seekarr.sh
+```
+
+Each log line looks like:
+
+```json
+{"component":"sonarr","level":"INFO","msg":"Randomly selected 5 item(s) (limit=5).","time":"2026-08-01T12:20:57.614075947+00:00"}
+```
+
+## Sample output (text format, dry run)
+
+```plain
+2026-08-01 12:20:56 - INFO - sonarr - Fetching missing items for sonarr...
+2026-08-01 12:20:57 - INFO - sonarr - Found 64 candidate item(s) for sonarr after filtering (monitoredOnly=true).
+2026-08-01 12:20:57 - INFO - sonarr - Randomly selected 5 item(s) (limit=5).
+2026-08-01 12:20:57 - INFO - sonarr - [12] Fargo S03E12
+2026-08-01 12:20:57 - INFO - sonarr - [3] Fargo S03E03
+2026-08-01 12:20:57 - INFO - sonarr - [10009] Fargo S09E09
+2026-08-01 12:20:57 - INFO - sonarr - [10015] Fargo S06E15
+2026-08-01 12:20:57 - INFO - sonarr - [30] Fargo S03E08
+```
+
+## Security note
+
+Don't hardcode API keys directly in the script. Keep them in environment variables, an untracked `.env` file loaded by your process manager, or a secrets manager — anything other than committing them to version control or pasting them into a script you might share.
+
+## Running on a schedule
+
+### cron
+
+```cron
+# Every 4 hours
+0 */4 * * * /path/to/seekarr.sh >> /var/log/seekarr.log 2>&1
+```
+
+### systemd timer
+
+`seekarr.service`:
+```ini
+[Unit]
+Description=seekarr search trigger
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/seekarr.env
+ExecStart=/path/to/seekarr.sh
+```
+
+`seekarr.timer`:
+```ini
+[Unit]
+Description=Run seekarr every 4 hours
+
+[Timer]
+OnCalendar=*-*-* 0/4:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+```
+
+`/etc/seekarr.env`:
+```
+SHSEEKARR_SONARR_URL=http://localhost:8989
+SHSEEKARR_SONARR_APIKEY=xxxx
+SHSEEKARR_RADARR_URL=http://localhost:7878
+SHSEEKARR_RADARR_APIKEY=yyyy
+```
+
+## Troubleshooting
+
+- **"Missing required dependency: jq"** — install `jq` (e.g. `apt install jq`, `brew install jq`).
+- **Nothing gets searched even though Sonarr/Radarr shows missing items** — check `SHSEEKARR_MONITORED_ONLY`; unmonitored items are excluded by default.
+- **Script exits immediately with an "Invalid ..." error** — one of the env vars (`SHSEEKARR_SEARCH_MODE`, `SHSEEKARR_LIMIT`, `SHSEEKARR_SONARR_LIMIT`, `SHSEEKARR_RADARR_LIMIT`, `SHSEEKARR_MONITORED_ONLY`) has an invalid value — the error message names which one and what value it received.
+- **"Request to wanted/missing (page 1) failed"** — check the app's URL/API key, and that the instance is reachable from where the script runs.

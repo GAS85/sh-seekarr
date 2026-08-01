@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# seekarr.sh - lightweight replacement for the "seekarr" project.
+# sh-seekarr.sh - lightweight replacement for the "seekarr" project.
 #
 # Queries Sonarr and/or Radarr for missing / cutoff-unmet (upgrade) items,
 # randomly selects up to a configurable limit, and triggers a search for
@@ -11,7 +11,7 @@
 # Configuration (environment variables)
 # ---------------------------------------------------------------------------
 #   SHSEEKARR_APPS              Comma separated list of apps to run.
-#                                Default: "sonarr,radarr"
+#                               Default: "sonarr,radarr"
 #
 #   SHSEEKARR_SONARR_URL        Base URL of Sonarr, e.g. http://localhost:8989
 #   SHSEEKARR_SONARR_APIKEY     Sonarr API key
