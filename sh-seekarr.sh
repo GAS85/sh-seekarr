@@ -27,14 +27,20 @@
 #   SHSEEKARR_MONITORED_ONLY    "true" | "false". Default: "true"
 #
 #   SHSEEKARR_LIMIT             Max number of items to search PER APP.
-#                                Default: 10
+#                               Default: 10
+#
+#   SHSEEKARR_SONARR_LIMIT      Set individual of items to search for Sonarr. 
+#
+#   SHSEEKARR_RADARR_LIMIT      Set individual of items to search for Radarr. 
 #
 #   SHSEEKARR_PAGE_SIZE         Page size used when paging the Sonarr/Radarr
-#                                wanted endpoints. Default: 200
+#                               wanted endpoints. Default: 200
 #
 #   SHSEEKARR_DRY_RUN           "true" | "false". If true, prints what would
 #                                be sent to the command API instead of POSTing
 #                                it. Default: "false"
+#
+#   SHSEEKARR_LOG_FORMAT         "text" or "json". Default: "text"
 #
 # An app (sonarr/radarr) is skipped automatically if its URL or API key is
 # not configured.
@@ -56,8 +62,10 @@ SHSEEKARR_LOG_FORMAT="${SHSEEKARR_LOG_FORMAT:-text}" # "text" or "json"
 
 SHSEEKARR_SONARR_URL="${SHSEEKARR_SONARR_URL:-http://sonarr:8989}"
 SHSEEKARR_SONARR_APIKEY="${SHSEEKARR_SONARR_APIKEY:-}"
+SHSEEKARR_SONARR_LIMIT="${SHSEEKARR_SONARR_LIMIT:-}"
 SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-http://radarr:7878}"
 SHSEEKARR_RADARR_APIKEY="${SHSEEKARR_RADARR_APIKEY:-}"
+SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
 
 # ---- Logging --------------------------------------------------------------
 
@@ -91,8 +99,11 @@ $([ -n "${SHSEEKARR_DRY_RUN}" ] && echo "\t\tDry run:               ${SHSEEKARR_
 \t\tLog format:            ${SHSEEKARR_LOG_FORMAT},
 $([ -n "${SHSEEKARR_SONARR_URL}" ] && echo "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
 $([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo "\t\tSonarr API Key:        set,")
+$([ -n "${SHSEEKARR_SONARR_LIMIT}" ] && echo "\t\tSonarr items limit:    ${SHSEEKARR_SONARR_LIMIT},")
 $([ -n "${SHSEEKARR_RADARR_URL}" ] && echo "\t\tRadarr URL:            ${SHSEEKARR_RADARR_URL},")
-$([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo "\t\tRadarr API Key:        set,")"
+$([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo "\t\tRadarr API Key:        set,")
+$([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT}")
+"
 
 # ---- Sanity checks ----------------------------------------------------------
 
@@ -116,6 +127,12 @@ esac
 
 if ! [[ "$SHSEEKARR_LIMIT" =~ ^[0-9]+$ ]]; then
   log ERROR "SHSEEKARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIMIT}'" >&2
+  exit 1
+elif [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_LIMIT" =~ ^[0-9]+$ ]]; then
+  log ERROR "SHSEEKARR_SONARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_LIMIT}'" >&2
+  exit 1
+elif [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_RADARR_LIMIT" =~ ^[0-9]+$ ]]; then
+  log ERROR "SHSEEKARR_RADARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_RADARR_LIMIT}'" >&2
   exit 1
 fi
 
@@ -238,8 +255,16 @@ process_app() {
     return 0
   fi
 
+  if [[ "$app" == "sonarr" ]] && [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]]; then
+    LIMIT="${SHSEEKARR_SONARR_LIMIT}"
+  elif [[ "$app" == "radarr" ]] && [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]]; then
+    LIMIT="${SHSEEKARR_RADARR_LIMIT}"
+  else
+    LIMIT="${SHSEEKARR_LIMIT}"
+  fi
+
   local selected_file="${tmp_dir}/selected.txt"
-  head -n "$SHSEEKARR_LIMIT" "$ids_file" >"$selected_file"
+  head -n "$LIMIT" "$ids_file" >"$selected_file"
 
   local selected_count
   selected_count="$(wc -l <"$selected_file" | tr -d ' ')"
@@ -252,7 +277,8 @@ process_app() {
   # Show what was picked, by name.
   local sel_id sel_label
   while IFS=$'\t' read -r sel_id sel_label; do
-    log INFO "${sel_id}\t- ${sel_label}"
+    # log INFO "${sel_id}\t- ${sel_label}"
+    log INFO "Request - ${sel_label}"
   done <"$selected_file"
 
   local ids_json body
