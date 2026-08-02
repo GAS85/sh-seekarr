@@ -42,7 +42,12 @@
 #                                be sent to the command API instead of POSTing
 #                                it. Default: "false"
 #
-#   SHSEEKARR_LOG_FORMAT         "text" or "json". Default: "text"
+#  SHSEEKARR_SCHEDULE_INTERVAL  Scheduler interval can be integer number for seconds,
+#                               or 's','m','h', or 'd', for seconds, minutes, hours, days.
+#
+#  SHSEEKARR_SCHEDULE_RANDOMIZER Add some random waiting seconds to scheduler interval
+#
+#  SHSEEKARR_LOG_FORMAT          "text" or "json". Default: "text"
 #
 # An app (sonarr/radarr) is skipped automatically if its URL or API key is
 # not configured.
@@ -58,14 +63,17 @@ SHSEEKARR_APPS="${SHSEEKARR_APPS:-sonarr,radarr}"
 SHSEEKARR_SEARCH_MODE="${SHSEEKARR_SEARCH_MODE:-missing}"
 SHSEEKARR_MONITORED_ONLY="${SHSEEKARR_MONITORED_ONLY:-true}"
 SHSEEKARR_LIMIT="${SHSEEKARR_LIMIT:-10}"
-SHSEEKARR_PAGE_SIZE="${SHSEEKARR_PAGE_SIZE:-100}"
+SHSEEKARR_PAGE_SIZE="${SHSEEKARR_PAGE_SIZE:-200}"
 SHSEEKARR_DRY_RUN="${SHSEEKARR_DRY_RUN:-}"
+SHSEEKARR_SCHEDULE_INTERVAL="${SHSEEKARR_SCHEDULE_INTERVAL:-}"
+SHSEEKARR_SCHEDULE_RANDOMIZER="${SHSEEKARR_SCHEDULE_RANDOMIZER:-false}"
 SHSEEKARR_LOG_FORMAT="${SHSEEKARR_LOG_FORMAT:-text}" # "text" or "json"
 
-SHSEEKARR_SONARR_URL="${SHSEEKARR_SONARR_URL:-http://sonarr:8989}"
+SHSEEKARR_SONARR_URL="${SHSEEKARR_SONARR_URL:-}"
 SHSEEKARR_SONARR_APIKEY="${SHSEEKARR_SONARR_APIKEY:-}"
 SHSEEKARR_SONARR_LIMIT="${SHSEEKARR_SONARR_LIMIT:-}"
-SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-http://radarr:7878}"
+
+SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-}"
 SHSEEKARR_RADARR_APIKEY="${SHSEEKARR_RADARR_APIKEY:-}"
 SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
 
@@ -98,6 +106,8 @@ log INFO "Welcome to SH Seekarr:
 \t\tSearch items limit:    ${SHSEEKARR_LIMIT},
 \t\tPage size:             ${SHSEEKARR_PAGE_SIZE},
 $([ -n "${SHSEEKARR_DRY_RUN}" ] && echo "\t\tDry run:               ${SHSEEKARR_DRY_RUN},")
+$([ -n "${SHSEEKARR_SCHEDULE_INTERVAL}" ] && echo "\t\tScheduler interval:    ${SHSEEKARR_SCHEDULE_INTERVAL},")
+$([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo "\t\tScheduler randomizer:  enabled,")
 \t\tLog format:            ${SHSEEKARR_LOG_FORMAT},
 $([ -n "${SHSEEKARR_SONARR_URL}" ] && echo "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
 $([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo "\t\tSonarr API Key:        set,")
@@ -328,6 +338,7 @@ process_app() {
 
 # ---- Main -------------------------------------------------------------------
  
+main_app () {
 # Sonarr's wanted endpoints only embed the parent series (needed for the series title) if includeSeries=true is requested.
 SONARR_EXTRA_QS="&includeSeries=true"
 # jq: [id, "Series Name S01E05"] as a 2-column @tsv line. Season/episode numbers are zero-padded to 2 digits (numbers >= 100 are left as-is).
@@ -359,6 +370,27 @@ for raw_app in "${APPS_ARR[@]}"; do
     ;;
   esac
 done
+}
 
+if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
+    random_sleep=""
+    # Infinity loop with periodical check
+    while :
+    do
+        main_app
+
+        # Add randomizer between 1 and 3600 seconds
+        if [[ ${SHSEEKARR_SCHEDULE_RANDOMIZER} == "true" ]]; then
+            random_sleep="$(echo $((1 + $RANDOM % 3600)))"
+        fi
+        app="main"
+        log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL $([ -n "${random_sleep:-}" ] && echo "plus ${random_sleep} seconds")"
+        sleep ${SHSEEKARR_SCHEDULE_INTERVAL} ${random_sleep}
+    done
+else
+  main_app
+fi
+
+app="main"
 log INFO "All done."
 exit 0
