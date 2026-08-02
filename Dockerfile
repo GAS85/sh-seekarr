@@ -29,3 +29,8 @@ COPY --chmod=444 LICENSE /app/LICENSE
 USER $USER
 
 CMD ["bash", "/app/sh-seekarr.sh"]
+
+HEALTHCHECK --interval=5m \
+             --timeout=5s \
+             --retries=3 \
+             CMD pgrep -f /app/sh-seekarr.sh
