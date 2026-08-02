@@ -1,5 +1,18 @@
 # sh-seekarr.sh
 
+[![Dev Build](https://github.com/GAS85/sh-seekarr/actions/workflows/docker-dev.yml/badge.svg?branch=dev)](https://github.com/GAS85/sh-seekarr/actions/workflows/docker-dev.yml)
+[![Release Build and Push to Dockerhub](https://github.com/GAS85/sh-seekarr/actions/workflows/docker-release.yml/badge.svg)](https://github.com/GAS85/sh-seekarr/actions/workflows/docker-release.yml?branch=main)
+![Release](https://img.shields.io/github/actions/workflow/status/GAS85/sh-seekarr/docker-release.yml?label=release&logo=github)
+[![Docker hub](https://img.shields.io/badge/Docker--hub-grey?logo=docker)][docker-hub]
+[![Docker Pulls][docker-pulls]][docker-hub]
+[![Docker Image Size][docker-size]][docker-hub]
+
+[docker-hub]: https://hub.docker.com/r/gas85/sh-seekarr
+[docker-pulls]: https://img.shields.io/docker/pulls/gas85/sh-seekarr
+[docker-size]: https://img.shields.io/docker/image-size/gas85/sh-seekarr/latest
+
+---
+
 A lightweight, dependency-free replacement for the [seekarr](https://github.com/scottrobertson/seekarr/) and [seekarr](https://github.com/tumeden/seekarr) projects.
 
 It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items — instead of hammering every wanted item at once.
