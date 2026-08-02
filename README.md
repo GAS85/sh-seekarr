@@ -42,6 +42,22 @@ export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
 
 Run it on a schedule (cron, systemd timer, build in scheduler, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
 
+### Docker
+
+```bash
+docker run --name sh-seekarr \
+	-e SHSEEKARR_SONARR_URL=http://sonarr:8989/ \
+	-e "SHSEEKARR_SONARR_APIKEY=your key" \
+	-e SHSEEKARR_RADARR_URL=http://radarr:7878/ \
+	-e "SHSEEKARR_RADARR_APIKEY=your key" \
+	--restart no \
+	gas85/sh-seekarr:latest
+```
+
+### Docker-compose
+
+Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml) example.
+
 ## Configuration reference
 
 All configuration is via environment variables, prefixed `SHSEEKARR_`.
