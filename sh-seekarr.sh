@@ -99,7 +99,7 @@ log() {
 
 # ---- Startup summary --------------------------------------------------------
 
-log INFO "Welcome to SH Seekarr:
+log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSION}")$([ -n "${VCS_REF}" ] && echo " build ${VCS_REF}").
 \t\tApps enabled:          ${SHSEEKARR_APPS},
 \t\tSearch Mode:           ${SHSEEKARR_SEARCH_MODE},
 \t\tSearch Monitored only: ${SHSEEKARR_MONITORED_ONLY},
