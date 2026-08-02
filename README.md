@@ -202,7 +202,24 @@ SHSEEKARR_RADARR_APIKEY=yyyy
 ### Script
 
 ```bash
-SHSEEKARR_SCHEDULE_INTERVAL="2h" ./seekarr.sh
+export SHSEEKARR_SONARR_URL="http://localhost:8989"
+export SHSEEKARR_SONARR_APIKEY="your-sonarr-api-key"
+export SHSEEKARR_RADARR_URL="http://localhost:7878"
+export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
+export SHSEEKARR_SCHEDULE_INTERVAL="4h"
+./seekarr.sh
+```
+
+### Docker
+
+```bash
+docker run --name sh-seekarr \
+	-e SHSEEKARR_SONARR_URL=http://sonarr:8989/ \
+	-e "SHSEEKARR_SONARR_APIKEY=your key" \
+	-e SHSEEKARR_RADARR_URL=http://radarr:7878/ \
+	-e "SHSEEKARR_RADARR_APIKEY=your key" \
+    -e "SHSEEKARR_SCHEDULE_INTERVAL=4h" \
+	gas85/sh-seekarr:latest
 ```
 
 ## Troubleshooting
