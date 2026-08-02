@@ -17,7 +17,7 @@ The Python-based `seekarr` kind of the same and is overloaded with functions and
 - `jq`
 - coreutils (`sort`, `head`, `cut`, `wc` — present on virtually every Linux/macOS system)
 
-No Python, no persistent state, no database.
+No Python, no Typescript no persistent state, no database.
 
 ## How it works
 
@@ -37,19 +37,26 @@ export SHSEEKARR_SONARR_URL="http://localhost:8989"
 export SHSEEKARR_SONARR_APIKEY="your-sonarr-api-key"
 export SHSEEKARR_RADARR_URL="http://localhost:7878"
 export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
-
-export SHSEEKARR_SEARCH_MODE="both"
-export SHSEEKARR_MONITORED_ONLY="true"
-export SHSEEKARR_LIMIT="10"
-
-# Always try a dry run first
-export SHSEEKARR_DRY_RUN="true"
 ./seekarr.sh
 ```
 
-Once you're happy with what it picked, set `SHSEEKARR_DRY_RUN=false` (or unset it) and run it for real.
+Run it on a schedule (cron, systemd timer, build in scheduler, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
 
-Run it on a schedule (cron, systemd timer, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
+### Docker
+
+```bash
+docker run --name sh-seekarr \
+	-e SHSEEKARR_SONARR_URL=http://sonarr:8989/ \
+	-e "SHSEEKARR_SONARR_APIKEY=your key" \
+	-e SHSEEKARR_RADARR_URL=http://radarr:7878/ \
+	-e "SHSEEKARR_RADARR_APIKEY=your key" \
+	--restart no \
+	gas85/sh-seekarr:latest
+```
+
+### Docker-compose
+
+Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml) example.
 
 ## Configuration reference
 
@@ -59,10 +66,10 @@ All configuration is via environment variables, prefixed `SHSEEKARR_`.
 
 | Variable | Required | Default | Description |
 |----------|:--------:|---------|-------------|
-| `SHSEEKARR_APPS` | No | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr` and `radarr`. |
-| `SHSEEKARR_SONARR_URL` | If using Sonarr | `http://sonarr:8989` | Base URL of your Sonarr instance. |
+| `SHSEEKARR_APPS` | `sonarr,radarr` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr` and `radarr`. |
+| `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989` |
 | `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General). |
-| `SHSEEKARR_RADARR_URL` | If using Radarr | `http://radarr:7878` | Base URL of your Radarr instance. |
+| `SHSEEKARR_RADARR_URL` | If using Radarr | *(empty)* | Base URL of your Radarr instance. E.g.: `http://radarr:7878`|
 | `SHSEEKARR_RADARR_APIKEY` | If using Radarr | *(empty)* | Radarr API key (Settings → General). |
 
 If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error — so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
@@ -76,7 +83,7 @@ If an app's URL or API key isn't set, that app is skipped with a log message rat
 | `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
 | `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
 | `SHSEEKARR_RADARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Radarr only. |
-| `SHSEEKARR_PAGE_SIZE` | `100` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
+| `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
 
 **Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app — e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
 
@@ -85,7 +92,14 @@ If an app's URL or API key isn't set, that app is skipped with a log message rat
 | Variable | Default | Description |
 |--------------------------|---------|--------------|
 | `SHSEEKARR_DRY_RUN` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, prints the exact command payload that *would* be sent to Sonarr/Radarr, without actually triggering a search. |
-| `SHSEEKARR_LOG_FORMAT` | `text` | `text` for human-readable log lines, `json` for one-JSON-object-per-line structured logs (useful for log aggregators). |
+| `SHSEEKARR_LOG_FORMAT` | *(unset)* | Unset for human-readable log lines, `json` for one-JSON-object-per-line structured logs (useful for log aggregators). |
+
+### Scheduler
+
+| Variable | Default | Description |
+|--------------------------|---------|--------------|
+| `SHSEEKARR_SCHEDULE_INTERVAL` | *(unset)* | Shen set will enable scheduler. Scheduler interval can be an integer or floating-point number for seconds, or `s`,`m`,`h`, or `d`, for seconds, minutes, hours, days. E.g. `86400` = `86400s` = `1440m` = `24h` = `1d`. |
+| `SHSEEKARR_SCHEDULE_RANDOMIZER` | `false` | `true`/`false` Add some random waiting seconds to the scheduler interval between 1 and 3600 seconds. |
 
 ## Example: run only Sonarr, upgrades only, higher limit
 
@@ -185,12 +199,34 @@ SHSEEKARR_RADARR_URL=http://localhost:7878
 SHSEEKARR_RADARR_APIKEY=yyyy
 ```
 
+### Script
+
+```bash
+export SHSEEKARR_SONARR_URL="http://localhost:8989"
+export SHSEEKARR_SONARR_APIKEY="your-sonarr-api-key"
+export SHSEEKARR_RADARR_URL="http://localhost:7878"
+export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
+export SHSEEKARR_SCHEDULE_INTERVAL="4h"
+./seekarr.sh
+```
+
+### Docker
+
+```bash
+docker run --name sh-seekarr \
+	-e SHSEEKARR_SONARR_URL=http://sonarr:8989/ \
+	-e "SHSEEKARR_SONARR_APIKEY=your key" \
+	-e SHSEEKARR_RADARR_URL=http://radarr:7878/ \
+	-e "SHSEEKARR_RADARR_APIKEY=your key" \
+    -e "SHSEEKARR_SCHEDULE_INTERVAL=4h" \
+	gas85/sh-seekarr:latest
+```
+
 ## Troubleshooting
 
 - **"Missing required dependency: jq"** — install `jq` (e.g. `apt install jq`, `brew install jq`).
 - **Nothing gets searched even though Sonarr/Radarr shows missing items** — check `SHSEEKARR_MONITORED_ONLY`; unmonitored items are excluded by default.
 - **Script exits immediately with an "Invalid ..." error** — one of the env vars (`SHSEEKARR_SEARCH_MODE`, `SHSEEKARR_LIMIT`, `SHSEEKARR_SONARR_LIMIT`, `SHSEEKARR_RADARR_LIMIT`, `SHSEEKARR_MONITORED_ONLY`) has an invalid value — the error message names which one and what value it received.
-- **"Request to wanted/missing (page 1) failed"** — check the app's URL/API key, and that the instance is reachable from where the script runs.
 
 ## Donation
 
