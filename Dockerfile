@@ -7,7 +7,7 @@ ARG USER=nobody
 
 LABEL maintainer="Georgiy Sitnikov <g.shseekarr@sitnikov.eu>" \
     org.opencontainers.image.title="sh-seekarr" \
-    org.opencontainers.image.description="Queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items" \
+    org.opencontainers.image.description="SH implementation of Seekarr as alternative to Huntarr. A lightweight tool that triggers manual searches in Sonarr and Radarr to find missing items and upgrade existing ones to better quality. No UI. No exposed ports. Queries Sonarr and/or Radarr for missing and/or cutoff-unmet items" \
     org.opencontainers.image.source="https://github.com/GAS85/sh-seekarr" \
     org.opencontainers.image.url="https://hub.docker.com/r/gas85/sh-seekarr" \
     org.opencontainers.image.documentation="https://github.com/GAS85/sh-seekarr#" \
