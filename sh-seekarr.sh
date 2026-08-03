@@ -77,6 +77,9 @@ SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-}"
 SHSEEKARR_RADARR_APIKEY="${SHSEEKARR_RADARR_APIKEY:-}"
 SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
 
+VERSION="${VERSION:-}"
+VCS_REF="${VCS_REF:-}"
+
 # ---- Logging --------------------------------------------------------------
 
 app="main"
@@ -182,9 +185,10 @@ api_post_command() {
 
 ConnectivityCheck() {
   # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
-  apiCall="$(curl -fsL -m 3 --retry 1 -w \n%{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || true)"
+  local connectivityCheck
+  connectivityCheck="$(curl -fsL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || echo 000)"
 
-	connectivityCheck=${apiCall: -3}
+	#connectivityCheck=${apiCall: -3}
 
 	# This is success
 	[[ "$connectivityCheck" == "200" ]] && return
@@ -248,7 +252,7 @@ process_app() {
   local id_field="$6" command_name="$7" extra_qs="$8" record_jq="$9"
 
   if [[ -z "$base_url" || -z "$apikey" ]]; then
-    log WARNING "Skipping ${app}: SHSEEKARR_${app^^}_URL / SHSEEKARR_${app^^}_APIKEY not configured."
+    log WARNING "Skipping ${app}: ${app} URL, and / or APIKEY not configured."
     return 0
   fi
 
@@ -286,6 +290,8 @@ process_app() {
     log INFO "Nothing to search for ${app}."
     return 0
   fi
+
+  local LIMIT
 
   if [[ "$app" == "sonarr" ]] && [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]]; then
     LIMIT="${SHSEEKARR_SONARR_LIMIT}"
