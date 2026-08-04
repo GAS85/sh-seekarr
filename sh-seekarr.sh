@@ -306,7 +306,7 @@ process_app() {
 
   local selected_count
   selected_count="$(wc -l <"$selected_file" | tr -d ' ')"
-  log INFO "Randomly selected ${selected_count} item(s) (limit=${SHSEEKARR_LIMIT})."
+  log INFO "Randomly selected ${selected_count} item(s) (limit=${LIMIT})."
 
   if ((selected_count == 0)); then
     return 0
