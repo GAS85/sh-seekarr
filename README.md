@@ -103,6 +103,40 @@ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, esp
 
 **Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app — e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
 
+#### Test
+
+<details>
+<summary>Test with "monitored" and without it</summary>
+
+```bash
+./sh-seekarr.sh | grep -E "Search Mode|Found"                                                                                                               
+                Search Mode:           upgrades,
+2026-08-05 12:00:27 - INFO - sonarr - Found 51 candidate item(s) for sonarr after filtering (monitoredOnly=true).
+2026-08-05 12:00:27 - INFO - sonarr_seasons - Found 13 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=true).
+./sh-seekarr.sh | grep -E "Search Mo|Found"
+                Search Mode:           missing,
+2026-08-05 12:00:46 - INFO - sonarr - Found 242 candidate item(s) for sonarr after filtering (monitoredOnly=true).
+2026-08-05 12:00:47 - INFO - sonarr_seasons - Found 22 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=true).
+./sh-seekarr.sh | grep -E "Search Mo|Found"
+                Search Mode:           both,
+2026-08-05 12:01:03 - INFO - sonarr - Found 293 candidate item(s) for sonarr after filtering (monitoredOnly=true).
+2026-08-05 12:01:03 - INFO - sonarr_seasons - Found 31 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=true).
+./sh-seekarr.sh | grep -E "Search Mo|Found"
+                Search Mode:           upgrades,
+2026-08-05 12:01:22 - INFO - sonarr - Found 169 candidate item(s) for sonarr after filtering (monitoredOnly=false).
+2026-08-05 12:01:22 - INFO - sonarr_seasons - Found 14 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=false).
+./sh-seekarr.sh | grep -E "Search Mo|Found"
+                Search Mode:           missing,
+2026-08-05 12:03:27 - INFO - sonarr - Found 10110 candidate item(s) for sonarr after filtering (monitoredOnly=false).
+2026-08-05 12:05:03 - INFO - sonarr_seasons - Found 692 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=false).
+./sh-seekarr.sh | grep -E "Search Mo|Found"
+                Search Mode:           both,
+2026-08-05 12:06:55 - INFO - sonarr - Found 10279 candidate item(s) for sonarr after filtering (monitoredOnly=false).
+2026-08-05 12:08:30 - INFO - sonarr_seasons - Found 697 candidate season(s) for sonarr_seasons after filtering (monitoredOnly=false).
+```
+
+</details>
+
 ### Output & safety
 
 | Variable | Default | Description |
