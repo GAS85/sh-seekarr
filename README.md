@@ -94,7 +94,7 @@ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, esp
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SHSEEKARR_SEARCH_MODE` | `missing` | `missing` — only unaired/missing items (`wanted/missing`).<br>`upgrades` — only cutoff-unmet items (`wanted/cutoff`).<br>`both` / `all` — union of both, deduplicated by id. |
-| `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. |
+| `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. Usually it is not needed to set it to `false`, in this case we will search over the whole catalog of series and movies, even they are not monitored (probable already watched). |
 | `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
 | `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
 | `SHSEEKARR_RADARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Radarr only. |

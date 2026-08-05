@@ -220,10 +220,7 @@ fetch_wanted_ids() {
   ConnectivityCheck "$base_url" "$apikey"
 
   while (((page - 1) * SHSEEKARR_PAGE_SIZE < total_records)); do
-    qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}"
-    if [[ "$MONITORED_ONLY" == "true" ]]; then
-      qs+="&monitored=true"
-    fi
+    qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}&monitored=${MONITORED_ONLY}"
 
     if ! resp="$(api_get "$base_url" "$apikey" "/${endpoint}${qs}")"; then
       log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
