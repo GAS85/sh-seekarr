@@ -3,7 +3,7 @@ services:
     image: gas85/sh-seekarr:latest
     container_name: sh-seekarr
     environment:
-      - SHSEEKARR_APPS=sonarr,radarr
+      - SHSEEKARR_APPS=sonarr,radarr,sonarr_seasons
       - SHSEEKARR_SEARCH_MODE=missing
       - SHSEEKARR_MONITORED_ONLY=true
       - SHSEEKARR_LIMIT=10
@@ -13,6 +13,7 @@ services:
       - SHSEEKARR_SCHEDULE_INTERVAL=6h
       - SHSEEKARR_SCHEDULE_RANDOMIZER=true
       - SHSEEKARR_SONARR_LIMIT=10
+      - SHSEEKARR_SONARR_SEASONS_LIMIT=2
       - SHSEEKARR_RADARR_LIMIT=1
       - SHSEEKARR_SONARR_URL=http://sonarr:8989/
       - SHSEEKARR_SONARR_APIKEY=your key
