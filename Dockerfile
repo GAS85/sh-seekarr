@@ -7,16 +7,18 @@ ARG USER=nobody
 
 LABEL maintainer="Georgiy Sitnikov <g.shseekarr@sitnikov.eu>" \
     org.opencontainers.image.title="sh-seekarr" \
-    org.opencontainers.image.description="SH implementation of Seekarr as alternative to Huntarr. A lightweight tool that triggers manual searches in Sonarr and Radarr to find missing items and upgrade existing ones to better quality. No UI. No exposed ports. Queries Sonarr and/or Radarr for missing and/or cutoff-unmet items" \
+    org.opencontainers.image.description="SH implementation of Seekarr as alternative to Huntarr. A lightweight tool that triggers manual searches in Sonarr and Radarr to find missing items and upgrade existing ones to better quality. No UI. No exposed ports. Queries Sonarr and/or Radarr for missing and/or cutoff-unmet items. Minimal CPU and RAM footprint" \
     org.opencontainers.image.source="https://github.com/GAS85/sh-seekarr" \
     org.opencontainers.image.url="https://hub.docker.com/r/gas85/sh-seekarr" \
     org.opencontainers.image.documentation="https://github.com/GAS85/sh-seekarr#" \
     org.opencontainers.image.licenses="MIT" \
     org.opencontainers.image.version=$VERSION \
-    org.opencontainers.image.revision=$VCS_REF
+    org.opencontainers.image.revision=$VCS_REF \
+    org.opencontainers.image.created=$BUILD_DATE
 
 ENV VERSION=$VERSION
 ENV VCS_REF=$VCS_REF
+ENV BUILD_DATE=$BUILD_DATE
 ENV TZ=Europe/Zurich
 
 RUN apk add --no-cache curl jq coreutils
