@@ -72,15 +72,18 @@ SHSEEKARR_LOG_FORMAT="${SHSEEKARR_LOG_FORMAT:-text}" # "text" or "json"
 SHSEEKARR_SONARR_URL="${SHSEEKARR_SONARR_URL:-}"
 SHSEEKARR_SONARR_APIKEY="${SHSEEKARR_SONARR_APIKEY:-}"
 SHSEEKARR_SONARR_LIMIT="${SHSEEKARR_SONARR_LIMIT:-}"
+SHSEEKARR_SONARR_SEASONS_LIMIT="${SHSEEKARR_SONARR_SEASONS_LIMIT:-}"
 
 SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-}"
 SHSEEKARR_RADARR_APIKEY="${SHSEEKARR_RADARR_APIKEY:-}"
 SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
 
+# ---- Help Variables ---------------------------------------------------------
+
 VERSION="${VERSION:-}"
 VCS_REF="${VCS_REF:-}"
 
-# ---- Logging --------------------------------------------------------------
+# ---- Logging ----------------------------------------------------------------
 
 app="main"
 
@@ -115,6 +118,7 @@ $([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo "\t\tScheduler randomi
 $([ -n "${SHSEEKARR_SONARR_URL}" ] && echo "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
 $([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo "\t\tSonarr API Key:        set,")
 $([ -n "${SHSEEKARR_SONARR_LIMIT}" ] && echo "\t\tSonarr items limit:    ${SHSEEKARR_SONARR_LIMIT},")
+$([ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT}" ] && echo "\t\tSonarr seasons limit:  ${SHSEEKARR_SONARR_SEASONS_LIMIT},")
 $([ -n "${SHSEEKARR_RADARR_URL}" ] && echo "\t\tRadarr URL:            ${SHSEEKARR_RADARR_URL},")
 $([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo "\t\tRadarr API Key:        set,")
 $([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT}")
@@ -145,6 +149,9 @@ if ! [[ "$SHSEEKARR_LIMIT" =~ ^[0-9]+$ ]]; then
   exit 1
 elif [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_LIMIT" =~ ^[0-9]+$ ]]; then
   log ERROR "SHSEEKARR_SONARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_LIMIT}'" >&2
+  exit 1
+elif [[ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_SEASONS_LIMIT" =~ ^[0-9]+$ ]]; then
+  log ERROR "SHSEEKARR_SONARR_SEASONS_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_SEASONS_LIMIT}'" >&2
   exit 1
 elif [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_RADARR_LIMIT" =~ ^[0-9]+$ ]]; then
   log ERROR "SHSEEKARR_RADARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_RADARR_LIMIT}'" >&2
@@ -213,10 +220,7 @@ fetch_wanted_ids() {
   ConnectivityCheck "$base_url" "$apikey"
 
   while (((page - 1) * SHSEEKARR_PAGE_SIZE < total_records)); do
-    qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}"
-    if [[ "$MONITORED_ONLY" == "true" ]]; then
-      qs+="&monitored=true"
-    fi
+    qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}&monitored=${MONITORED_ONLY}"
 
     if ! resp="$(api_get "$base_url" "$apikey" "/${endpoint}${qs}")"; then
       log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
@@ -245,6 +249,33 @@ fetch_wanted_ids() {
 }
 
 # ---- Per-app processing ------------------------------------------------------
+ 
+# Unlike process_app(), Sonarr's SeasonSearch command does not accept a list of ids - it targets exactly one (seriesId, seasonNumber) pair per call: {"name":"SeasonSearch","seriesId":111,"seasonNumber":0} So instead of one batched POST, this fires one POST per selected season.
+
+process_app_trigger_execution() {
+# Derives the command name and item count from $body itself (via jq) rather than trusting the caller's $command_name/$selected_count - those are stale/wrong for sonarr_seasons (still "EpisodeSearch" from the dispatch call, and selected_count is the *total* across all seasons, not "1" for this single call). Reading them back out of $body can't drift from what's actually being sent.
+  local actual_name actual_count
+  actual_name="$(echo "$body" | jq -r '.name')"
+  actual_count="$(echo "$body" | jq -r 'if has("episodeIds") then (.episodeIds|length) elif has("movieIds") then (.movieIds|length) else 1 end')"
+ 
+  if [[ "$SHSEEKARR_DRY_RUN" == "true" ]]; then
+    log INFO "[DRY RUN] Would POST to ${app} /api/v3/command:"
+    echo "$body" | jq .
+    return 0
+  fi
+ 
+  log INFO "Triggering ${actual_name} on ${app} for ${actual_count} item(s)..."
+  local resp
+  if resp="$(api_post_command "$base_url" "$apikey" "$body")"; then
+    log INFO "$(echo "$resp" | jq -c '{id, name, status}' 2>/dev/null)"
+  else
+    if [[ "$app" == "sonarr_seasons" ]]; then
+      log WARNING "Failed to trigger SeasonSearch for seriesId=${sel_series} seasonNumber=${sel_season}." >&2
+    else
+      log WARNING "Failed to trigger search command for ${app}." >&2
+    fi
+  fi
+}
 
 process_app() {
   local app="$1" base_url="$2" apikey="$3"
@@ -256,8 +287,6 @@ process_app() {
     return 0
   fi
 
-#  log INFO "== ${app} =="
-
   local tmp_dir
   tmp_dir="$(mktemp -d)"
   # shellcheck disable=SC2064
@@ -268,23 +297,33 @@ process_app() {
   local ids_file="${tmp_dir}/ids.txt"
   : >"$ids_file"
 
+  local missing_file="${tmp_dir}/missing.txt"
+  local cutoff_file="${tmp_dir}/cutoff.txt"
+ 
+  # Fetching is identical for all three apps (sonarr, sonarr_seasons, radarr) - only the endpoint/extra_qs/record_jq passed in differ. This is what makes SHSEEKARR_SEARCH_MODE (missing/upgrades/both/all) apply consistently to sonarr_seasons too, instead of hardcoding wanted/missing.
   if [[ "$SHSEEKARR_SEARCH_MODE" == "missing" || "$SHSEEKARR_SEARCH_MODE" == "both" || "$SHSEEKARR_SEARCH_MODE" == "all" ]]; then
     log INFO "Fetching missing items for ${app}..."
-    fetch_wanted_ids "$base_url" "$apikey" "$missing_endpoint" "${tmp_dir}/missing.txt" "$extra_qs" "$record_jq"
-    cat "${tmp_dir}/missing.txt" >>"$ids_file"
+    fetch_wanted_ids "$base_url" "$apikey" "$missing_endpoint" "$missing_file" "$extra_qs" "$record_jq"
+    cat "$missing_file" >>"$ids_file"
   fi
 
   if [[ "$SHSEEKARR_SEARCH_MODE" == "upgrades" || "$SHSEEKARR_SEARCH_MODE" == "both" || "$SHSEEKARR_SEARCH_MODE" == "all" ]]; then
     log INFO "Fetching cutoff-unmet (upgrade) items for ${app}..."
-    fetch_wanted_ids "$base_url" "$apikey" "$cutoff_endpoint" "${tmp_dir}/cutoff.txt" "$extra_qs" "$record_jq"
-    cat "${tmp_dir}/cutoff.txt" >>"$ids_file"
+    fetch_wanted_ids "$base_url" "$apikey" "$cutoff_endpoint" "$cutoff_file" "$extra_qs" "$record_jq"
+    cat "$cutoff_file" >>"$ids_file"
   fi
 
+  # Here we will get uniq records and Randomize order of them
   sort -uR "$ids_file" -o "$ids_file"
 
   local total_found
   total_found="$(wc -l <"$ids_file" | tr -d ' ')"
+ 
+  if [[ "$app" == "sonarr_seasons" ]]; then
+    log INFO "Found ${total_found} candidate season(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
+  else
   log INFO "Found ${total_found} candidate item(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
+  fi 
 
   if ((total_found == 0)); then
     log INFO "Nothing to search for ${app}."
@@ -293,27 +332,51 @@ process_app() {
 
   local LIMIT
 
+  # Apply Local app Limits if applicable, or use generic one
   if [[ "$app" == "sonarr" ]] && [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]]; then
     LIMIT="${SHSEEKARR_SONARR_LIMIT}"
   elif [[ "$app" == "radarr" ]] && [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]]; then
     LIMIT="${SHSEEKARR_RADARR_LIMIT}"
+  elif [[ "$app" == "sonarr_seasons" ]] && [[ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT:-}" ]]; then
+    LIMIT="${SHSEEKARR_SONARR_SEASONS_LIMIT}"
   else
     LIMIT="${SHSEEKARR_LIMIT}"
   fi
 
+  # Select Items to search based on a limit from randomized list
   local selected_file="${tmp_dir}/selected.txt"
   head -n "$LIMIT" "$ids_file" >"$selected_file"
 
   local selected_count
   selected_count="$(wc -l <"$selected_file" | tr -d ' ')"
-  log INFO "Randomly selected ${selected_count} item(s) (limit=${SHSEEKARR_LIMIT})."
+ 
+  if [[ "$app" == "sonarr_seasons" ]]; then
+    log INFO "Randomly selected ${selected_count} season(s) (limit=${LIMIT})."
+  else
+  log INFO "Randomly selected ${selected_count} item(s) (limit=${LIMIT})."
+  fi
 
+  # Is there is nothing to work with, exit this function
   if ((selected_count == 0)); then
     return 0
   fi
  
   # Show what was picked, by name.
+  if [[ "$app" == "sonarr_seasons" ]]; then
+    local sel_series sel_season sel_label body resp
+ 
+    while IFS=$'\t' read -r sel_series sel_season sel_label; do
+      log INFO "Request - ${sel_label}"
+  
+      body="$(jq -n \
+        --argjson seriesId "$sel_series" \
+        --argjson seasonNumber "$sel_season" \
+        '{name: "SeasonSearch", seriesId: $seriesId, seasonNumber: $seasonNumber}')"
+      process_app_trigger_execution
+    done <"$selected_file" 
+  else
   local sel_id sel_label
+ 
   while IFS=$'\t' read -r sel_id sel_label; do
     # log INFO "${sel_id}\t- ${sel_label}"
     log INFO "Request - ${sel_label}"
@@ -326,19 +389,7 @@ process_app() {
     --argjson ids "$ids_json" \
     --arg field "$id_field" \
     '{name: $name} + {($field): $ids}')"
-
-  if [[ "$SHSEEKARR_DRY_RUN" == "true" ]]; then
-    log INFO "[DRY RUN] Would POST to ${app} /api/v3/command:"
-    echo "$body" | jq .
-    return 0
-  fi
-
-  log INFO "Triggering ${command_name} on ${app} for ${selected_count} item(s)..."
-  local resp
-  if resp="$(api_post_command "$base_url" "$apikey" "$body")"; then
-    log INFO "$(echo "$resp" | jq -c '{id, name, status}' 2>/dev/null)"
-  else
-    log WARNING "Failed to trigger search command for ${app}." >&2
+    process_app_trigger_execution
   fi
 }
 
@@ -349,6 +400,9 @@ main_app () {
 SONARR_EXTRA_QS="&includeSeries=true"
 # jq: [id, "Series Name S01E05"] as a 2-column @tsv line. Season/episode numbers are zero-padded to 2 digits (numbers >= 100 are left as-is).
 SONARR_RECORD_JQ='[(.id|tostring), ((.series.title // "Unknown Series") + " S" + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end) + "E" + ((.episodeNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
+ 
+# jq: [seriesId, seasonNumber, "Series Name Season 01"] as a 3-column @tsv line, one per missing episode.
+SONARR_SEASONS_RECORD_JQ='[(.seriesId|tostring), (.seasonNumber|tostring), ((.series.title // "Unknown Series") + " Season " + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
  
 # Radarr's wanted endpoints return MovieResource records directly, which already carry title/year - no extra query param needed.
 RADARR_EXTRA_QS=""
@@ -365,6 +419,11 @@ for raw_app in "${APPS_ARR[@]}"; do
       "wanted/missing" "wanted/cutoff" "episodeIds" "EpisodeSearch" \
       "$SONARR_EXTRA_QS" "$SONARR_RECORD_JQ"
     ;;
+  sonarr_seasons)
+    process_app "sonarr_seasons" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" \
+      "wanted/missing" "wanted/cutoff" "" "" \
+      "$SONARR_EXTRA_QS" "$SONARR_SEASONS_RECORD_JQ"
+    ;;
   radarr)
     process_app "radarr" "$SHSEEKARR_RADARR_URL" "$SHSEEKARR_RADARR_APIKEY" \
       "wanted/missing" "wanted/cutoff" "movieIds" "MoviesSearch" \
@@ -372,7 +431,7 @@ for raw_app in "${APPS_ARR[@]}"; do
     ;;
   "") ;;
   *)
-    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected sonarr and/or radarr)" >&2
+    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr)" >&2
     ;;
   esac
 done

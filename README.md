@@ -79,23 +79,26 @@ All configuration is via environment variables, prefixed `SHSEEKARR_`.
 
 | Variable | Required | Default | Description |
 |----------|:--------:|---------|-------------|
-| `SHSEEKARR_APPS` | `sonarr,radarr` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr` and `radarr`. |
-| `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989` |
-| `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General). |
+| `SHSEEKARR_APPS` | `sonarr,radarr,sonarr_seasons` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr`, `sonarr_seasons` and `radarr`.<br>`sonarr` will request random Episodes from a different Series and Seasons.<br>`sonarr_seasons` will request whole Season from random Series if at least 1 episode is missing from it. |
+| `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989`. It is needed for `sonarr` and `sonarr_seasons` apps. |
+| `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General). It is needed for `sonarr` and `sonarr_seasons` apps. |
 | `SHSEEKARR_RADARR_URL` | If using Radarr | *(empty)* | Base URL of your Radarr instance. E.g.: `http://radarr:7878`|
 | `SHSEEKARR_RADARR_APIKEY` | If using Radarr | *(empty)* | Radarr API key (Settings → General). |
 
 If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error — so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
+
+Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, especially when Season was fully released it is easer to search for a whole season, instead of particular episode, this is not covered by `sonarr` only.
 
 ### Search behavior
 
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `SHSEEKARR_SEARCH_MODE` | `missing` | `missing` — only unaired/missing items (`wanted/missing`).<br>`upgrades` — only cutoff-unmet items (`wanted/cutoff`).<br>`both` / `all` — union of both, deduplicated by id. |
-| `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. |
+| `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. Usually it is not needed to set it to `false`, in this case we will search over the whole catalog of series and movies, even they are not monitored (probable already watched). |
 | `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
 | `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
 | `SHSEEKARR_RADARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Radarr only. |
+| `SHSEEKARR_SONARR_SEASONS_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_SONARR_SEASONS_LIMIT` for Sonarr only, when requesting whole seasons instead of episodes. |
 | `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
 
 **Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app — e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
@@ -121,7 +124,7 @@ SHSEEKARR_APPS="sonarr" \
 SHSEEKARR_SONARR_URL="http://localhost:8989" \
 SHSEEKARR_SONARR_APIKEY="xxxx" \
 SHSEEKARR_SEARCH_MODE="upgrades" \
-SHSEEKARR_LIMIT="10" \
+SHSEEKARR_LIMIT="15" \
 ./seekarr.sh
 ```
 
@@ -174,13 +177,14 @@ Don't hardcode API keys directly in the script. Keep them in environment variabl
 ### cron
 
 ```cron
-# Every 4 hours
-0 */4 * * * /path/to/seekarr.sh >> /var/log/seekarr.log 2>&1
+# Every 6 hours
+0 */6 * * * /path/to/seekarr.sh >> /var/log/seekarr.log 2>&1
 ```
 
 ### systemd timer
 
 `seekarr.service`:
+
 ```ini
 [Unit]
 Description=seekarr search trigger
@@ -192,12 +196,13 @@ ExecStart=/path/to/seekarr.sh
 ```
 
 `seekarr.timer`:
+
 ```ini
 [Unit]
-Description=Run seekarr every 4 hours
+Description=Run seekarr every 6 hours
 
 [Timer]
-OnCalendar=*-*-* 0/4:00:00
+OnCalendar=*-*-* 0/6:00:00
 Persistent=true
 
 [Install]
@@ -205,7 +210,8 @@ WantedBy=timers.target
 ```
 
 `/etc/seekarr.env`:
-```
+
+```bash
 SHSEEKARR_SONARR_URL=http://localhost:8989
 SHSEEKARR_SONARR_APIKEY=xxxx
 SHSEEKARR_RADARR_URL=http://localhost:7878
@@ -219,11 +225,11 @@ export SHSEEKARR_SONARR_URL="http://localhost:8989"
 export SHSEEKARR_SONARR_APIKEY="your-sonarr-api-key"
 export SHSEEKARR_RADARR_URL="http://localhost:7878"
 export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
-export SHSEEKARR_SCHEDULE_INTERVAL="4h"
+export SHSEEKARR_SCHEDULE_INTERVAL="6h"
 ./seekarr.sh
 ```
 
-### Docker
+### Docker internal scheduler
 
 ```bash
 docker run --name sh-seekarr \
@@ -231,9 +237,11 @@ docker run --name sh-seekarr \
 	-e "SHSEEKARR_SONARR_APIKEY=your key" \
 	-e SHSEEKARR_RADARR_URL=http://radarr:7878/ \
 	-e "SHSEEKARR_RADARR_APIKEY=your key" \
-    -e "SHSEEKARR_SCHEDULE_INTERVAL=4h" \
+    -e "SHSEEKARR_SCHEDULE_INTERVAL=6h" \
 	gas85/sh-seekarr:latest
 ```
+
+For docker compose, pleaser refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml).
 
 ## Troubleshooting
 

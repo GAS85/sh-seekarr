@@ -3,19 +3,20 @@ services:
     image: gas85/sh-seekarr:latest
     container_name: sh-seekarr
     environment:
-      - SHSEEKARR_APPS=sonarr,radarr
-      - SHSEEKARR_SEARCH_MODE=missing
-      - SHSEEKARR_MONITORED_ONLY=true
-      - SHSEEKARR_LIMIT=10
-      - SHSEEKARR_PAGE_SIZE=200
-      - SHSEEKARR_DRY_RUN=false
-      - SHSEEKARR_LOG_FORMAT=text
-      - SHSEEKARR_SCHEDULE_INTERVAL=6h
-      - SHSEEKARR_SCHEDULE_RANDOMIZER=true
-      - SHSEEKARR_SONARR_LIMIT=10
-      - SHSEEKARR_RADARR_LIMIT=1
       - SHSEEKARR_SONARR_URL=http://sonarr:8989/
       - SHSEEKARR_SONARR_APIKEY=your key
       - SHSEEKARR_RADARR_URL=http://radarr:7878/
       - SHSEEKARR_RADARR_APIKEY=your key
-    restart: no
+      # - SHSEEKARR_APPS=sonarr,radarr,sonarr_seasons
+      # - SHSEEKARR_SEARCH_MODE=missing
+      # - SHSEEKARR_MONITORED_ONLY=true
+      # - SHSEEKARR_LIMIT=10
+      # - SHSEEKARR_PAGE_SIZE=200
+      # - SHSEEKARR_DRY_RUN=true
+      # - SHSEEKARR_LOG_FORMAT=text
+      # - SHSEEKARR_SCHEDULE_INTERVAL=6h
+      # - SHSEEKARR_SCHEDULE_RANDOMIZER=true
+      # - SHSEEKARR_SONARR_LIMIT=10
+      # - SHSEEKARR_SONARR_SEASONS_LIMIT=2
+      # - SHSEEKARR_RADARR_LIMIT=1
+    restart: no # Set to "unless-stopped" if you using SHSEEKARR_SCHEDULE_INTERVAL 
