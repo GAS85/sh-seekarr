@@ -12,40 +12,43 @@
 # ---------------------------------------------------------------------------
 # Configuration (environment variables)
 # ---------------------------------------------------------------------------
-#   SHSEEKARR_APPS              Comma separated list of apps to run.
-#                               Default: "sonarr,radarr"
+#  SHSEEKARR_APPS                Comma separated list of apps to run.
+#                                Default: "sonarr,radarr"
 #
-#   SHSEEKARR_SONARR_URL        Base URL of Sonarr, e.g. http://localhost:8989
-#   SHSEEKARR_SONARR_APIKEY     Sonarr API key
-#   SHSEEKARR_RADARR_URL        Base URL of Radarr, e.g. http://localhost:7878
-#   SHSEEKARR_RADARR_APIKEY     Radarr API key
+#  SHSEEKARR_SONARR_URL          Base URL of Sonarr, e.g. http://localhost:8989
+#  SHSEEKARR_SONARR_APIKEY       Sonarr API key
+#  SHSEEKARR_RADARR_URL          Base URL of Radarr, e.g. http://localhost:7878
+#  SHSEEKARR_RADARR_APIKEY       Radarr API key
 #
-#   SHSEEKARR_SEARCH_MODE       "missing" | "upgrades" | "both" | "all"
+#  SHSEEKARR_SEARCH_MODE         "missing" | "upgrades" | "both" | "all"
 #                                missing  -> only wanted/missing
 #                                upgrades -> only wanted/cutoff (unmet)
 #                                both/all -> union of both, deduplicated
 #                                Default: "missing"
 #
-#   SHSEEKARR_MONITORED_ONLY    "true" | "false". Default: "true"
+#  SHSEEKARR_MONITORED_ONLY      "true" | "false". Default: "true"
 #
-#   SHSEEKARR_LIMIT             Max number of items to search PER APP.
-#                               Default: 10
+#  SHSEEKARR_LIMIT               Max number of items to search PER APP.
+#                                Default: 10
 #
-#   SHSEEKARR_SONARR_LIMIT      Set individual of items to search for Sonarr. 
+#  SHSEEKARR_SONARR_LIMIT        Set individual of items to search for Sonarr. 
 #
-#   SHSEEKARR_RADARR_LIMIT      Set individual of items to search for Radarr. 
+#  SHSEEKARR_RADARR_LIMIT        Set individual of items to search for Radarr. 
 #
-#   SHSEEKARR_PAGE_SIZE         Page size used when paging the Sonarr/Radarr
-#                               wanted endpoints. Default: 200
+#  SHSEEKARR_PAGE_SIZE           Page size used when paging the Sonarr/Radarr
+#                                wanted endpoints. Default: 200
 #
-#   SHSEEKARR_DRY_RUN           "true" | "false". If true, prints what would
+#  SHSEEKARR_DRY_RUN             "true" | "false". If true, prints what would
 #                                be sent to the command API instead of POSTing
 #                                it. Default: "false"
 #
-#  SHSEEKARR_SCHEDULE_INTERVAL  Scheduler interval can be integer number for seconds,
-#                               or 's','m','h', or 'd', for seconds, minutes, hours, days.
+#  SHSEEKARR_SCHEDULE_INTERVAL   Scheduler interval can be integer number for seconds,
+#                                or 's','m','h', or 'd', for seconds, minutes, hours, days.
 #
 #  SHSEEKARR_SCHEDULE_RANDOMIZER Add some random waiting seconds to scheduler interval
+#
+#  SHSEEKARR_SEARCH_ON_START     "true" | "false". If false will search only after
+#                                SHSEEKARR_SCHEDULE_INTERVAL expired.
 #
 #  SHSEEKARR_LOG_FORMAT          "text" or "json". Default: "text"
 #
@@ -53,9 +56,6 @@
 # not configured.
 #
 # Requires: curl, jq, sort
-# ---------------------------------------------------------------------------
-
-set -euo pipefail
 
 # ---- Config ---------------------------------------------------------------
 
@@ -65,8 +65,11 @@ SHSEEKARR_MONITORED_ONLY="${SHSEEKARR_MONITORED_ONLY:-true}"
 SHSEEKARR_LIMIT="${SHSEEKARR_LIMIT:-10}"
 SHSEEKARR_PAGE_SIZE="${SHSEEKARR_PAGE_SIZE:-200}"
 SHSEEKARR_DRY_RUN="${SHSEEKARR_DRY_RUN:-}"
+
 SHSEEKARR_SCHEDULE_INTERVAL="${SHSEEKARR_SCHEDULE_INTERVAL:-}"
 SHSEEKARR_SCHEDULE_RANDOMIZER="${SHSEEKARR_SCHEDULE_RANDOMIZER:-false}"
+SHSEEKARR_SEARCH_ON_START="${SHSEEKARR_SEARCH_ON_START:-true}"
+
 SHSEEKARR_LOG_FORMAT="${SHSEEKARR_LOG_FORMAT:-text}" # "text" or "json"
 
 SHSEEKARR_SONARR_URL="${SHSEEKARR_SONARR_URL:-}"
@@ -82,6 +85,8 @@ SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
 
 VERSION="${VERSION:-}"
 VCS_REF="${VCS_REF:-}"
+
+set -euo pipefail
 
 # ---- Logging ----------------------------------------------------------------
 
@@ -105,7 +110,7 @@ log() {
 
 # ---- Startup summary --------------------------------------------------------
 
-log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSION}")$([ -n "${VCS_REF}" ] && echo " build ${VCS_REF}").
+log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSION}")$([ -n "${VCS_REF}" ] && echo " build ${VCS_REF:0:8}").
 \t\tApps enabled:          ${SHSEEKARR_APPS},
 \t\tSearch Mode:           ${SHSEEKARR_SEARCH_MODE},
 \t\tSearch Monitored only: ${SHSEEKARR_MONITORED_ONLY},
@@ -114,6 +119,7 @@ log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSIO
 $([ -n "${SHSEEKARR_DRY_RUN}" ] && echo "\t\tDry run:               ${SHSEEKARR_DRY_RUN},")
 $([ -n "${SHSEEKARR_SCHEDULE_INTERVAL}" ] && echo "\t\tScheduler interval:    ${SHSEEKARR_SCHEDULE_INTERVAL},")
 $([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo "\t\tScheduler randomizer:  enabled,")
+$([ "${SHSEEKARR_SEARCH_ON_START}" = "false" ] && echo "\t\tSearch on start:       disabled,")
 \t\tLog format:            ${SHSEEKARR_LOG_FORMAT},
 $([ -n "${SHSEEKARR_SONARR_URL}" ] && echo "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
 $([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo "\t\tSonarr API Key:        set,")
@@ -135,6 +141,8 @@ need_bin() {
 need_bin curl
 need_bin jq
 need_bin sort
+need_bin wc
+need_bin sed
 
 case "$SHSEEKARR_SEARCH_MODE" in
 missing | upgrades | both | all) ;;
@@ -172,6 +180,15 @@ true | 1 | yes) SHSEEKARR_DRY_RUN="true" ;;
 *) SHSEEKARR_DRY_RUN="false" ;;
 esac
 
+case "$(echo "$SHSEEKARR_SEARCH_ON_START" | tr '[:upper:]' '[:lower:]')" in
+true | 1 | yes) SHSEEKARR_SEARCH_ON_START="true" ;;
+*) SHSEEKARR_SEARCH_ON_START="false" ;;
+esac
+
+if [[ ${SHSEEKARR_SEARCH_ON_START} == false ]] && [[ ! -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
+  log WARNING "You disabled search on start, but didn't not set any Schedule Interval. Will ignore this setting"
+fi
+
 # ---- HTTP helpers -----------------------------------------------------------
 
 api_get() {
@@ -193,9 +210,7 @@ api_post_command() {
 ConnectivityCheck() {
   # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
   local connectivityCheck
-  connectivityCheck="$(curl -fsL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || echo 000)"
-
-	#connectivityCheck=${apiCall: -3}
+  connectivityCheck="$(curl -sL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || true )"
 
 	# This is success
 	[[ "$connectivityCheck" == "200" ]] && return
@@ -439,11 +454,18 @@ done
 
 if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
     random_sleep=""
+
+    # If search on start disabled. skip it till next round
+    if [[ ${SHSEEKARR_SEARCH_ON_START} == "true" ]]; then
+      main_app
+    else
+      app="main"
+      log INFO "Skipping search for now"
+    fi
+
     # Infinity loop with periodical check
     while :
     do
-        main_app
-
         # Add randomizer between 1 and 3600 seconds
         if [[ ${SHSEEKARR_SCHEDULE_RANDOMIZER} == "true" ]]; then
             random_sleep="$(echo $((1 + $RANDOM % 3600)))"
@@ -451,6 +473,7 @@ if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
         app="main"
         log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL $([ -n "${random_sleep:-}" ] && echo "plus ${random_sleep} seconds")"
         sleep ${SHSEEKARR_SCHEDULE_INTERVAL} ${random_sleep}
+        main_app
     done
 else
   main_app

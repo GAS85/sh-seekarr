@@ -148,8 +148,9 @@ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, esp
 
 | Variable | Default | Description |
 |--------------------------|---------|--------------|
-| `SHSEEKARR_SCHEDULE_INTERVAL` | *(unset)* | Shen set will enable scheduler. Scheduler interval can be an integer or floating-point number for seconds, or `s`,`m`,`h`, or `d`, for seconds, minutes, hours, days. E.g. `86400` = `86400s` = `1440m` = `24h` = `1d`. |
+| `SHSEEKARR_SCHEDULE_INTERVAL` | *(unset)* | When set will enable scheduler. Scheduler interval can be an integer or floating-point number for seconds, or `s`,`m`,`h`, or `d`, for seconds, minutes, hours, days. E.g. `86400` = `86400s` = `1440m` = `24h` = `1d`. |
 | `SHSEEKARR_SCHEDULE_RANDOMIZER` | `false` | `true`/`false` Add some random waiting seconds to the scheduler interval between 1 and 3600 seconds. |
+| `SHSEEKARR_SEARCH_ON_START` | `true` | `true`/`false` Shoud search be performed upon start - `true`, or delay search based on scheduler - `false`. Works only if `SHSEEKARR_SCHEDULE_INTERVAL` is set. |
 
 ## Example: run only Sonarr, upgrades only, higher limit
 
