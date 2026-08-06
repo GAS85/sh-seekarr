@@ -17,8 +17,15 @@
 #
 #  SHSEEKARR_SONARR_URL          Base URL of Sonarr, e.g. http://localhost:8989
 #  SHSEEKARR_SONARR_APIKEY       Sonarr API key
+#
 #  SHSEEKARR_RADARR_URL          Base URL of Radarr, e.g. http://localhost:7878
 #  SHSEEKARR_RADARR_APIKEY       Radarr API key
+#
+#  SHSEEKARR_LIDARR_URL          Base URL of Lidarr, e.g. http://localhost:8686
+#  SHSEEKARR_LIDARR_APIKEY       Lidarr API key
+#
+#  SHSEEKARR_READARR_URL         Base URL of Readarr, e.g. http://localhost:8787
+#  SHSEEKARR_READARR_APIKEY      Readarr API key
 #
 #  SHSEEKARR_SEARCH_MODE         "missing" | "upgrades" | "both" | "all"
 #                                missing  -> only wanted/missing
@@ -34,6 +41,10 @@
 #  SHSEEKARR_SONARR_LIMIT        Set individual of items to search for Sonarr. 
 #
 #  SHSEEKARR_RADARR_LIMIT        Set individual of items to search for Radarr. 
+#
+#  SHSEEKARR_LIDARR_LIMIT        Set individual of items to search for Lidarr.
+#
+#  SHSEEKARR_READARR_LIMIT       Set individual of items to search for Readarr.
 #
 #  SHSEEKARR_PAGE_SIZE           Page size used when paging the Sonarr/Radarr
 #                                wanted endpoints. Default: 200
@@ -52,8 +63,8 @@
 #
 #  SHSEEKARR_LOG_FORMAT          "text" or "json". Default: "text"
 #
-# An app (sonarr/radarr) is skipped automatically if its URL or API key is
-# not configured.
+# An app (sonarr/radarr/lidarr/readarr) is skipped automatically if its URL
+# or API key is not configured.
 #
 # Requires: curl, jq, sort
 
@@ -80,6 +91,14 @@ SHSEEKARR_SONARR_SEASONS_LIMIT="${SHSEEKARR_SONARR_SEASONS_LIMIT:-}"
 SHSEEKARR_RADARR_URL="${SHSEEKARR_RADARR_URL:-}"
 SHSEEKARR_RADARR_APIKEY="${SHSEEKARR_RADARR_APIKEY:-}"
 SHSEEKARR_RADARR_LIMIT="${SHSEEKARR_RADARR_LIMIT:-}"
+
+SHSEEKARR_LIDARR_URL="${SHSEEKARR_LIDARR_URL:-}"
+SHSEEKARR_LIDARR_APIKEY="${SHSEEKARR_LIDARR_APIKEY:-}"
+SHSEEKARR_LIDARR_LIMIT="${SHSEEKARR_LIDARR_LIMIT:-}"
+
+SHSEEKARR_READARR_URL="${SHSEEKARR_READARR_URL:-}"
+SHSEEKARR_READARR_APIKEY="${SHSEEKARR_READARR_APIKEY:-}"
+SHSEEKARR_READARR_LIMIT="${SHSEEKARR_READARR_LIMIT:-}"
 
 # ---- Help Variables ---------------------------------------------------------
 
@@ -127,7 +146,13 @@ $([ -n "${SHSEEKARR_SONARR_LIMIT}" ] && echo "\t\tSonarr items limit:    ${SHSEE
 $([ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT}" ] && echo "\t\tSonarr seasons limit:  ${SHSEEKARR_SONARR_SEASONS_LIMIT},")
 $([ -n "${SHSEEKARR_RADARR_URL}" ] && echo "\t\tRadarr URL:            ${SHSEEKARR_RADARR_URL},")
 $([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo "\t\tRadarr API Key:        set,")
-$([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT}")
+$([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT},")
+$([ -n "${SHSEEKARR_LIDARR_URL}" ] && echo "\t\tLidarr URL:            ${SHSEEKARR_LIDARR_URL},")
+$([ -n "${SHSEEKARR_LIDARR_APIKEY}" ] && echo "\t\tLidarr API Key:        set,")
+$([ -n "${SHSEEKARR_LIDARR_LIMIT}" ] && echo "\t\tLidarr items limit:    ${SHSEEKARR_LIDARR_LIMIT},")
+$([ -n "${SHSEEKARR_READARR_URL}" ] && echo "\t\tReadarr URL:           ${SHSEEKARR_READARR_URL},")
+$([ -n "${SHSEEKARR_READARR_APIKEY}" ] && echo "\t\tReadarr API Key:       set,")
+$([ -n "${SHSEEKARR_READARR_LIMIT}" ] && echo "\t\tReadarr items limit:   ${SHSEEKARR_READARR_LIMIT}")
 "
 
 # ---- Sanity checks ----------------------------------------------------------
@@ -164,6 +189,12 @@ elif [[ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_S
 elif [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_RADARR_LIMIT" =~ ^[0-9]+$ ]]; then
   log ERROR "SHSEEKARR_RADARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_RADARR_LIMIT}'" >&2
   exit 1
+elif [[ -n "${SHSEEKARR_LIDARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_LIDARR_LIMIT" =~ ^[0-9]+$ ]]; then
+  log ERROR "SHSEEKARR_LIDARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIDARR_LIMIT}'" >&2
+  exit 1
+elif [[ -n "${SHSEEKARR_READARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_READARR_LIMIT" =~ ^[0-9]+$ ]]; then
+  log ERROR "SHSEEKARR_READARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_READARR_LIMIT}'" >&2
+  exit 1
 fi
 
 case "$(echo "$SHSEEKARR_MONITORED_ONLY" | tr '[:upper:]' '[:lower:]')" in
@@ -192,25 +223,34 @@ fi
 # ---- HTTP helpers -----------------------------------------------------------
 
 api_get() {
-  # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
+  # $1=base_url $2=apikey $3=api_version (e.g. "v3" or "v1") $4=path (starting with /, e.g. /wanted/missing?...)
   curl -fsS --max-time 30 \
     -H "X-Api-Key: ${2}" \
-    "${1%/}/api/v3${3}"
+    "${1%/}/api/${3}${4}"
 }
 
 api_post_command() {
-  # $1=base_url $2=apikey $3=json body
+  # $1=base_url $2=apikey $3=api_version $4=json body
   curl -fsS --max-time 30 \
     -H "X-Api-Key: ${2}" \
     -H "Content-Type: application/json" \
-    -X POST -d "${3}" \
-    "${1%/}/api/v3/command"
+    -X POST -d "${4}" \
+    "${1%/}/api/${3}/command"
+}
+
+api_version_for() {
+  # Sonarr/Radarr are on the v3 API; Lidarr/Readarr are still v1.
+  case "$1" in
+  sonarr | sonarr_seasons | radarr) echo "v3" ;;
+  lidarr | readarr) echo "v1" ;;
+  *) echo "v3" ;;
+  esac
 }
 
 ConnectivityCheck() {
-  # $1=base_url $2=apikey $3=path (starting with /, e.g. /wanted/missing?...)
+  # $1=base_url $2=apikey $3=api_version
   local connectivityCheck
-  connectivityCheck="$(curl -sL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/v3/wanted/missing?page=0&pageSize=1" 2>&1 || true )"
+  connectivityCheck="$(curl -sL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/${3}/wanted/missing?page=0&pageSize=1" 2>&1 || true )"
 
 	# This is success
 	[[ "$connectivityCheck" == "200" ]] && return
@@ -218,8 +258,8 @@ ConnectivityCheck() {
 	# This is an error
 	[[ "$connectivityCheck" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
 	[[ "$connectivityCheck" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
-	[[ "$connectivityCheck" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/v3"; exit 1; }
-	[[ "$connectivityCheck" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/v3"; exit 1 ; }
+	[[ "$connectivityCheck" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/${3}"; exit 1; }
+	[[ "$connectivityCheck" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/${3}"; exit 1 ; }
 	[[ "$connectivityCheck" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
 
 }
@@ -227,17 +267,17 @@ ConnectivityCheck() {
 # ---- Fetch wanted items into a file, one "id<TAB>label" per line ----------
 
 fetch_wanted_ids() {
-  local base_url="$1" apikey="$2" endpoint="$3" out_file="$4" extra_qs="$5" record_jq="$6"
+  local base_url="$1" apikey="$2" api_version="$3" endpoint="$4" out_file="$5" extra_qs="$6" record_jq="$7"
   local page=1 total_records=1 fetched=0 page_count qs resp filter
 
   : >"$out_file"
 
-  ConnectivityCheck "$base_url" "$apikey"
+  ConnectivityCheck "$base_url" "$apikey" "$api_version"
 
   while (((page - 1) * SHSEEKARR_PAGE_SIZE < total_records)); do
     qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}&monitored=${MONITORED_ONLY}"
 
-    if ! resp="$(api_get "$base_url" "$apikey" "/${endpoint}${qs}")"; then
+    if ! resp="$(api_get "$base_url" "$apikey" "$api_version" "/${endpoint}${qs}")"; then
       log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
       break
     fi
@@ -271,17 +311,20 @@ process_app_trigger_execution() {
 # Derives the command name and item count from $body itself (via jq) rather than trusting the caller's $command_name/$selected_count - those are stale/wrong for sonarr_seasons (still "EpisodeSearch" from the dispatch call, and selected_count is the *total* across all seasons, not "1" for this single call). Reading them back out of $body can't drift from what's actually being sent.
   local actual_name actual_count
   actual_name="$(echo "$body" | jq -r '.name')"
-  actual_count="$(echo "$body" | jq -r 'if has("episodeIds") then (.episodeIds|length) elif has("movieIds") then (.movieIds|length) else 1 end')"
+  # Generic over whichever *Ids array field is present (episodeIds, movieIds,
+  # albumIds, bookIds, ...) so this doesn't need updating per-app; falls back
+  # to 1 for id-less bodies like sonarr_seasons' {seriesId, seasonNumber}.
+  actual_count="$(echo "$body" | jq -r '([.[] | select(type=="array") | length] | first) // 1')"
  
   if [[ "$SHSEEKARR_DRY_RUN" == "true" ]]; then
-    log INFO "[DRY RUN] Would POST to ${app} /api/v3/command:"
+    log INFO "[DRY RUN] Would POST to ${app} /api/${api_version}/command:"
     echo "$body" | jq .
     return 0
   fi
  
   log INFO "Triggering ${actual_name} on ${app} for ${actual_count} item(s)..."
   local resp
-  if resp="$(api_post_command "$base_url" "$apikey" "$body")"; then
+  if resp="$(api_post_command "$base_url" "$apikey" "$api_version" "$body")"; then
     log INFO "$(echo "$resp" | jq -c '{id, name, status}' 2>/dev/null)"
   else
     if [[ "$app" == "sonarr_seasons" ]]; then
@@ -293,9 +336,9 @@ process_app_trigger_execution() {
 }
 
 process_app() {
-  local app="$1" base_url="$2" apikey="$3"
-  local missing_endpoint="$4" cutoff_endpoint="$5"
-  local id_field="$6" command_name="$7" extra_qs="$8" record_jq="$9"
+  local app="$1" base_url="$2" apikey="$3" api_version="$4"
+  local missing_endpoint="$5" cutoff_endpoint="$6"
+  local id_field="$7" command_name="$8" extra_qs="$9" record_jq="${10}"
 
   if [[ -z "$base_url" || -z "$apikey" ]]; then
     log WARNING "Skipping ${app}: ${app} URL, and / or APIKEY not configured."
@@ -318,13 +361,13 @@ process_app() {
   # Fetching is identical for all three apps (sonarr, sonarr_seasons, radarr) - only the endpoint/extra_qs/record_jq passed in differ. This is what makes SHSEEKARR_SEARCH_MODE (missing/upgrades/both/all) apply consistently to sonarr_seasons too, instead of hardcoding wanted/missing.
   if [[ "$SHSEEKARR_SEARCH_MODE" == "missing" || "$SHSEEKARR_SEARCH_MODE" == "both" || "$SHSEEKARR_SEARCH_MODE" == "all" ]]; then
     log INFO "Fetching missing items for ${app}..."
-    fetch_wanted_ids "$base_url" "$apikey" "$missing_endpoint" "$missing_file" "$extra_qs" "$record_jq"
+    fetch_wanted_ids "$base_url" "$apikey" "$api_version" "$missing_endpoint" "$missing_file" "$extra_qs" "$record_jq"
     cat "$missing_file" >>"$ids_file"
   fi
 
   if [[ "$SHSEEKARR_SEARCH_MODE" == "upgrades" || "$SHSEEKARR_SEARCH_MODE" == "both" || "$SHSEEKARR_SEARCH_MODE" == "all" ]]; then
     log INFO "Fetching cutoff-unmet (upgrade) items for ${app}..."
-    fetch_wanted_ids "$base_url" "$apikey" "$cutoff_endpoint" "$cutoff_file" "$extra_qs" "$record_jq"
+    fetch_wanted_ids "$base_url" "$apikey" "$api_version" "$cutoff_endpoint" "$cutoff_file" "$extra_qs" "$record_jq"
     cat "$cutoff_file" >>"$ids_file"
   fi
 
@@ -354,6 +397,10 @@ process_app() {
     LIMIT="${SHSEEKARR_RADARR_LIMIT}"
   elif [[ "$app" == "sonarr_seasons" ]] && [[ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT:-}" ]]; then
     LIMIT="${SHSEEKARR_SONARR_SEASONS_LIMIT}"
+  elif [[ "$app" == "lidarr" ]] && [[ -n "${SHSEEKARR_LIDARR_LIMIT:-}" ]]; then
+    LIMIT="${SHSEEKARR_LIDARR_LIMIT}"
+  elif [[ "$app" == "readarr" ]] && [[ -n "${SHSEEKARR_READARR_LIMIT:-}" ]]; then
+    LIMIT="${SHSEEKARR_READARR_LIMIT}"
   else
     LIMIT="${SHSEEKARR_LIMIT}"
   fi
@@ -424,29 +471,49 @@ RADARR_EXTRA_QS=""
 # jq: [id, "Movie Title (Year)"] as a 2-column @tsv line.
 RADARR_RECORD_JQ='[(.id|tostring), ((.title // "Unknown Movie") + " (" + ((.year // "?")|tostring) + ")")] | @tsv'
 
+# Lidarr's wanted endpoints only embed the parent artist (needed for the artist name) if includeArtist=true is requested.
+LIDARR_EXTRA_QS="&includeArtist=true"
+# jq: [id, "Artist Name - Album Title"] as a 2-column @tsv line.
+LIDARR_RECORD_JQ='[(.id|tostring), ((.artist.artistName // "Unknown Artist") + " - " + (.title // "Unknown Album"))] | @tsv'
+
+# Readarr's wanted endpoints only embed the parent author (needed for the author name) if includeAuthor=true is requested.
+READARR_EXTRA_QS="&includeAuthor=true"
+# jq: [id, "Author Name - Book Title"] as a 2-column @tsv line.
+READARR_RECORD_JQ='[(.id|tostring), ((.author.authorName // "Unknown Author") + " - " + (.title // "Unknown Book"))] | @tsv'
+
 IFS=',' read -ra APPS_ARR <<<"$SHSEEKARR_APPS"
 
 for raw_app in "${APPS_ARR[@]}"; do
   app="$(echo "$raw_app" | xargs | tr '[:upper:]' '[:lower:]')"
   case "$app" in
   sonarr)
-    process_app "sonarr" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" \
+    process_app "sonarr" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr)" \
       "wanted/missing" "wanted/cutoff" "episodeIds" "EpisodeSearch" \
       "$SONARR_EXTRA_QS" "$SONARR_RECORD_JQ"
     ;;
   sonarr_seasons)
-    process_app "sonarr_seasons" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" \
+    process_app "sonarr_seasons" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr_seasons)" \
       "wanted/missing" "wanted/cutoff" "" "" \
       "$SONARR_EXTRA_QS" "$SONARR_SEASONS_RECORD_JQ"
     ;;
   radarr)
-    process_app "radarr" "$SHSEEKARR_RADARR_URL" "$SHSEEKARR_RADARR_APIKEY" \
+    process_app "radarr" "$SHSEEKARR_RADARR_URL" "$SHSEEKARR_RADARR_APIKEY" "$(api_version_for radarr)" \
       "wanted/missing" "wanted/cutoff" "movieIds" "MoviesSearch" \
       "$RADARR_EXTRA_QS" "$RADARR_RECORD_JQ"
     ;;
+  lidarr)
+    process_app "lidarr" "$SHSEEKARR_LIDARR_URL" "$SHSEEKARR_LIDARR_APIKEY" "$(api_version_for lidarr)" \
+      "wanted/missing" "wanted/cutoff" "albumIds" "AlbumSearch" \
+      "$LIDARR_EXTRA_QS" "$LIDARR_RECORD_JQ"
+    ;;
+  readarr)
+    process_app "readarr" "$SHSEEKARR_READARR_URL" "$SHSEEKARR_READARR_APIKEY" "$(api_version_for readarr)" \
+      "wanted/missing" "wanted/cutoff" "bookIds" "BookSearch" \
+      "$READARR_EXTRA_QS" "$READARR_RECORD_JQ"
+    ;;
   "") ;;
   *)
-    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr)" >&2
+    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr,lidarr,readarr)" >&2
     ;;
   esac
 done
