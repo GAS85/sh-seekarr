@@ -17,6 +17,8 @@ A lightweight, dependency-free replacement for the [seekarr](https://github.com/
 
 It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items — instead of hammering every wanted item at once.
 
+**New!** Beta support for Lidarr and Readarr. Vibe coded via API Specifications, I do not have them to test properly.
+
 ## Why not just use seekarr?
 
 The Typescript-based `seekarr` project loads node image and packages that is not memory efficient at all, only idle mode requeues 50 MBs of RAM and 150+ MB docker image.
@@ -79,11 +81,15 @@ All configuration is via environment variables, prefixed `SHSEEKARR_`.
 
 | Variable | Required | Default | Description |
 |----------|:--------:|---------|-------------|
-| `SHSEEKARR_APPS` | `sonarr,radarr,sonarr_seasons` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr`, `sonarr_seasons` and `radarr`.<br>`sonarr` will request random Episodes from a different Series and Seasons.<br>`sonarr_seasons` will request whole Season from random Series if at least 1 episode is missing from it. |
-| `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989`. It is needed for `sonarr` and `sonarr_seasons` apps. |
-| `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General). It is needed for `sonarr` and `sonarr_seasons` apps. |
+| `SHSEEKARR_APPS` | `sonarr,radarr,sonarr_seasons` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr`, `sonarr_seasons` and `radarr`.<br><br>`sonarr` will request random Episodes from a different Series and Seasons.<br>`sonarr_seasons` will request whole Season from random Series if at least 1 episode is missing from it. |
+| `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989`.<br>It is needed for `sonarr` and `sonarr_seasons` apps. |
+| `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General).<br>It is needed for `sonarr` and `sonarr_seasons` apps. |
 | `SHSEEKARR_RADARR_URL` | If using Radarr | *(empty)* | Base URL of your Radarr instance. E.g.: `http://radarr:7878`|
 | `SHSEEKARR_RADARR_APIKEY` | If using Radarr | *(empty)* | Radarr API key (Settings → General). |
+| `SHSEEKARR_LIDARR_URL` | If using Lidarr | *(empty)* | Base URL of your Lidarr instance. E.g.: `http://lidarr:8686`|
+| `SHSEEKARR_LIDARR_APIKEY` | If using Lidarr | *(empty)* | Lidarr API key (Settings → General). |
+| `SHSEEKARR_READARR_URL` | If using Readarr | *(empty)* | Base URL of your Readarr instance. E.g.: `http://readarr:8787`|
+| `SHSEEKARR_READARR_APIKEY` | If using Readarr | *(empty)* | Readarr API key (Settings → General). |
 
 If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error — so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
 
@@ -98,6 +104,8 @@ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, esp
 | `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
 | `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
 | `SHSEEKARR_RADARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Radarr only. |
+| `SHSEEKARR_LIDARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Lidarr only. |
+| `SHSEEKARR_READARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Readarr only. |
 | `SHSEEKARR_SONARR_SEASONS_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_SONARR_SEASONS_LIMIT` for Sonarr only, when requesting whole seasons instead of episodes. |
 | `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
 
