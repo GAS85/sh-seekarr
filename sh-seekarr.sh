@@ -325,7 +325,7 @@ process_app_trigger_execution() {
   log INFO "Triggering ${actual_name} on ${app} for ${actual_count} item(s)..."
   local resp
   if resp="$(api_post_command "$base_url" "$apikey" "$api_version" "$body")"; then
-    log INFO "$(echo "$resp" | jq -c '{id, name, status}' 2>/dev/null)"
+    log INFO "$(echo "$resp" | jq -r '{id, name, status} | to_entries | map("\(.key)=\(.value)") | join(" ")' 2>/dev/null)"
   else
     if [[ "$app" == "sonarr_seasons" ]]; then
       log WARNING "Failed to trigger SeasonSearch for seriesId=${sel_series} seasonNumber=${sel_season}." >&2
