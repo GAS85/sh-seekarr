@@ -15,11 +15,11 @@
 
 A lightweight, dependency-free replacement for the [seekarr](https://github.com/scottrobertson/seekarr/) and [seekarr](https://github.com/tumeden/seekarr) projects.
 
-It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items — instead of hammering every wanted item at once.
+It queries Sonarr and/or Radarr for missing and/or cutoff-unmet ("upgrade") items, randomly selects up to a configurable limit, and triggers a targeted search for just those items - instead of hammering every wanted item at once.
 
-**New!** Beta support for Lidarr and Readarr. Vibe coded via API Specifications, I do not have them to test properly.
+**New!** ✅ Beta support for 🎵 Lidarr and 📚 Readarr. Vibe coded via API Specifications, I do not have them to test properly.
 
-## Why not just use seekarr?
+## ❓ Why not just use seekarr?
 
 The Typescript-based `seekarr` project loads node image and packages that is not memory efficient at all, only idle mode requeues 50 MBs of RAM and 150+ MB docker image.
 
@@ -30,7 +30,7 @@ The Python-based `seekarr` kind of the same and is overloaded with functions and
 - `bash`
 - `curl`
 - `jq`
-- coreutils (`sort`, `head`, `cut`, `wc` — present on virtually every Linux/macOS system)
+- coreutils (`sort`, `head`, `cut`, `wc` - present on virtually every Linux/macOS system)
 
 No Python, no Typescript no persistent state, no database.
 
@@ -40,8 +40,8 @@ No Python, no Typescript no persistent state, no database.
 2. Optionally filters to monitored-only items, both via the API's `monitored` query param and a client-side re-check (in case the Sonarr/Radarr version being talked to ignores the query param).
 3. Deduplicates and randomly shuffles the resulting id list (`sort -uR`).
 4. Takes the first `SHSEEKARR_LIMIT` (or per-app override) items.
-5. Logs what was picked, by name — e.g. `Breaking Bad S04E04` for Sonarr, `Heat (1995)` for Radarr.
-6. Triggers a single search command (`EpisodeSearch` / `MoviesSearch`) for exactly those items — or, if `SHSEEKARR_DRY_RUN=true`, just prints what *would* be sent.
+5. Logs what was picked, by name - e.g. `Breaking Bad S04E04` for Sonarr, `Heat (1995)` for Radarr.
+6. Triggers a single search command (`EpisodeSearch` / `MoviesSearch`) for exactly those items - or, if `SHSEEKARR_DRY_RUN=true`, just prints what *would* be sent.
 
 An app is skipped automatically if its URL or API key isn't configured, so you can safely run this with only Sonarr, only Radarr, or both.
 
@@ -81,7 +81,7 @@ All configuration is via environment variables, prefixed `SHSEEKARR_`.
 
 | Variable | Required | Default | Description |
 |----------|:--------:|---------|-------------|
-| `SHSEEKARR_APPS` | `sonarr,radarr,sonarr_seasons` | `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr`, `sonarr_seasons` and `radarr`.<br><br>`sonarr` will request random Episodes from a different Series and Seasons.<br>`sonarr_seasons` will request whole Season from random Series if at least 1 episode is missing from it. |
+| `SHSEEKARR_APPS` | `sonarr`, `sonarr,radarr` ...| `sonarr,radarr` | Comma-separated list of apps to run. Any combination of `sonarr`*, `sonarr_seasons`**, `radarr`, `readarr`, `lidarr`. |
 | `SHSEEKARR_SONARR_URL` | If using Sonarr | *(empty)* | Base URL of your Sonarr instance. E.g.: `http://sonarr:8989`.<br>It is needed for `sonarr` and `sonarr_seasons` apps. |
 | `SHSEEKARR_SONARR_APIKEY` | If using Sonarr | *(empty)* | Sonarr API key (Settings → General).<br>It is needed for `sonarr` and `sonarr_seasons` apps. |
 | `SHSEEKARR_RADARR_URL` | If using Radarr | *(empty)* | Base URL of your Radarr instance. E.g.: `http://radarr:7878`|
@@ -91,15 +91,19 @@ All configuration is via environment variables, prefixed `SHSEEKARR_`.
 | `SHSEEKARR_READARR_URL` | If using Readarr | *(empty)* | Base URL of your Readarr instance. E.g.: `http://readarr:8787`|
 | `SHSEEKARR_READARR_APIKEY` | If using Readarr | *(empty)* | Readarr API key (Settings → General). |
 
-If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error — so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
+\* `sonarr` will request random Episodes from a different Series and Seasons.
 
-Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, especially when Season was fully released it is easer to search for a whole season, instead of particular episode, this is not covered by `sonarr` only.
+\*\* `sonarr_seasons` will request whole Season from random Series if at least 1 episode is missing from it.
+
+❓ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, especially when Season was fully released it is easer to search for a whole season, instead of particular episode, this is not covered by `sonarr` only.
+
+If an app's URL or API key isn't set, that app is skipped with a log message rather than causing an error - so `SHSEEKARR_APPS` can safely list an app you haven't configured yet.
 
 ### Search behavior
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SHSEEKARR_SEARCH_MODE` | `missing` | `missing` — only unaired/missing items (`wanted/missing`).<br>`upgrades` — only cutoff-unmet items (`wanted/cutoff`).<br>`both` / `all` — union of both, deduplicated by id. |
+| `SHSEEKARR_SEARCH_MODE` | `missing` | `missing` - only unaired/missing items (`wanted/missing`).<br>`upgrades` - only cutoff-unmet items (`wanted/cutoff`).<br>`both` / `all` - union of both, deduplicated by id. |
 | `SHSEEKARR_MONITORED_ONLY` | `true` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, only monitored items are considered. Usually it is not needed to set it to `false`, in this case we will search over the whole catalog of series and movies, even they are not monitored (probable already watched). |
 | `SHSEEKARR_LIMIT` | `10` | Max number of items to search, **per app**, after random selection. |
 | `SHSEEKARR_SONARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Sonarr only. |
@@ -109,7 +113,7 @@ Why `sonarr` and `sonarr_seasons` exist, are they doing same job? Sometimes, esp
 | `SHSEEKARR_SONARR_SEASONS_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_SONARR_SEASONS_LIMIT` for Sonarr only, when requesting whole seasons instead of episodes. |
 | `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
 
-**Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app — e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
+**Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app - e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
 
 #### Test
 
@@ -211,11 +215,11 @@ Each log line looks like:
 2026-08-01 12:20:57 - INFO - sonarr - [30] Fargo S03E08
 ```
 
-## Security note
+## 🔒 Security note
 
-Don't hardcode API keys directly in the script. Keep them in environment variables, an untracked `.env` file loaded by your process manager, or a secrets manager — anything other than committing them to version control or pasting them into a script you might share.
+Don't hardcode API keys directly in the script. Keep them in environment variables, an untracked `.env` file loaded by your process manager, or a secrets manager - anything other than committing them to version control or pasting them into a script you might share.
 
-## Running on a schedule
+## ⏲️ Running on a schedule
 
 ### cron
 
@@ -286,11 +290,11 @@ docker run --name sh-seekarr \
 
 For docker compose, pleaser refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml).
 
-## Troubleshooting
+## 😵‍💫 Troubleshooting
 
-- **"Missing required dependency: jq"** — install `jq` (e.g. `apt install jq`, `brew install jq`).
-- **Nothing gets searched even though Sonarr/Radarr shows missing items** — check `SHSEEKARR_MONITORED_ONLY`; unmonitored items are excluded by default.
-- **Script exits immediately with an "Invalid ..." error** — one of the env vars (`SHSEEKARR_SEARCH_MODE`, `SHSEEKARR_LIMIT`, `SHSEEKARR_SONARR_LIMIT`, `SHSEEKARR_RADARR_LIMIT`, `SHSEEKARR_MONITORED_ONLY`) has an invalid value — the error message names which one and what value it received.
+- **"Missing required dependency: jq"** - install `jq` (e.g. `apt install jq`, `brew install jq`).
+- **Nothing gets searched even though Sonarr/Radarr shows missing items** - check `SHSEEKARR_MONITORED_ONLY`; unmonitored items are excluded by default.
+- **Script exits immediately with an "Invalid ..." error** - one of the env vars (`SHSEEKARR_SEARCH_MODE`, `SHSEEKARR_LIMIT`, `SHSEEKARR_SONARR_LIMIT`, `SHSEEKARR_RADARR_LIMIT`, `SHSEEKARR_MONITORED_ONLY`) has an invalid value - the error message names which one and what value it received.
 
 ## Donation
 
