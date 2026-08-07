@@ -247,7 +247,7 @@ api_version_for() {
   esac
 }
 
-ConnectivityCheck() {
+connectivity_check() {
   # $1=base_url $2=apikey $3=api_version
   local connectivityCheck
   connectivityCheck="$(curl -sL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/${3}/wanted/missing?page=0&pageSize=1" 2>&1 || true )"
@@ -272,7 +272,7 @@ fetch_wanted_ids() {
 
   : >"$out_file"
 
-  ConnectivityCheck "$base_url" "$apikey" "$api_version"
+  connectivity_check "$base_url" "$apikey" "$api_version"
 
   while (((page - 1) * SHSEEKARR_PAGE_SIZE < total_records)); do
     qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}&monitored=${MONITORED_ONLY}"
@@ -519,6 +519,8 @@ for raw_app in "${APPS_ARR[@]}"; do
 done
 }
 
+# Wrapped to function to enable TA
+main() {
 if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
     random_sleep=""
 
@@ -545,7 +547,12 @@ if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
 else
   main_app
 fi
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main
 
 app="main"
 log INFO "All done."
 exit 0
+fi
