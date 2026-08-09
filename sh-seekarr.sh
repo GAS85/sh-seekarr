@@ -120,10 +120,22 @@ else
 fi
 
 log() {
+  local level="$1"
+  local msg="$2"
+  local fd=1
+
+  [[ "$level" == "ERROR" ]] && fd=2
+
   if [[ ${SHSEEKARR_LOG_FORMAT} == "json" ]]; then
-    echo "{\"component\":\"${app}\",\"level\":\"$1\",\"msg\":\"$(echo $2 | sed 's/[[:space:]]\+/ /g; s/\\t//g')\",\"time\":\"$(ts)\"}"
+  #$(echo $2 | sed 's/[[:space:]]\+/ /g; s/\\t//g')
+    jq -cn \
+      --arg component "$app" \
+      --arg level "$level" \
+      --arg msg "$(echo $msg | sed 's/[[:space:]]\+/ /g; s/\\t//g')" \
+      --arg time "$(ts)" \
+      '{component: $component, level: $level, msg: $msg, time: $time}' >&"$fd"
   else
-    echo -e "$(ts) - $1 - ${app} - $(echo "$2" | grep -v '^$')"
+    echo -e "$(ts) - $1 - ${app} - $(echo "$2" | grep -v '^$')" >&"$fd"
   fi
 }
 
