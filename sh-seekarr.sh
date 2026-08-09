@@ -272,7 +272,7 @@ api_get() {
 }
 
 api_post_command() {
-  # $1=base_url $2=apikey $3=api_version $4=json body $5=custom path
+  # $1=base_url $2=apikey $3=api_version $4=json body $5=custom path (starting with /, e.g. /wanted/missing?...)
   # Set default path if not set
   local path="${5:-/command}"
   curl -fsS --max-time 30 \
@@ -301,7 +301,7 @@ connectivity_check() {
   http_code="${connectivityCheck##*$'\n'}"
   health_json="${connectivityCheck%$'\n'*}"
 
-  # Check if indecers are failing in long term
+  # Check if indexers have been failing long-term
   if jq -e '.[] | select(.source == "IndexerLongTermStatusCheck" and .type == "warning")' <<< "$health_json" >/dev/null; then
     indexers_failure="Long-term indexer failure detected"
     if [[ "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" == "true" ]]; then
