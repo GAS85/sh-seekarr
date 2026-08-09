@@ -112,6 +112,7 @@ If an app's URL or API key isn't set, that app is skipped with a log message rat
 | `SHSEEKARR_READARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Readarr only. |
 | `SHSEEKARR_SONARR_SEASONS_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_SONARR_SEASONS_LIMIT` for Sonarr only, when requesting whole seasons instead of episodes. |
 | `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
+| `SHSEEKARR_INDEXER_TEST_ON_FAILURE` | `false` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, force all indexers retest on failure prior to search |
 
 **Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app - e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
 

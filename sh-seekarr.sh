@@ -299,17 +299,16 @@ connectivity_check() {
       log WARNING "$indexers_failure. You can force all indexers to be retested before the search request by setting 'SHSEEKARR_INDEXER_TEST_ON_FAILURE' to 'true'"
     fi
   fi
-  exit 0
 
-	# This is success
-	[[ "$http_code" == "200" ]] && return
+  # This is success
+  [[ "$http_code" == "200" ]] && return
 
-	# This is an error
-	[[ "$http_code" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
-	[[ "$http_code" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
-	[[ "$http_code" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/${3}"; exit 1; }
-	[[ "$http_code" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/${3}"; exit 1 ; }
-	[[ "$http_code" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
+  # This is an error
+  [[ "$http_code" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
+  [[ "$http_code" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
+  [[ "$http_code" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/${3}"; exit 1; }
+  [[ "$http_code" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/${3}"; exit 1 ; }
+  [[ "$http_code" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
 
 }
 
@@ -353,7 +352,7 @@ fetch_wanted_ids() {
 }
 
 # ---- Per-app processing ------------------------------------------------------
- 
+
 # Unlike process_app(), Sonarr's SeasonSearch command does not accept a list of ids - it targets exactly one (seriesId, seasonNumber) pair per call: {"name":"SeasonSearch","seriesId":111,"seasonNumber":0} So instead of one batched POST, this fires one POST per selected season.
 
 process_app_trigger_execution() {
@@ -364,13 +363,13 @@ process_app_trigger_execution() {
   # albumIds, bookIds, ...) so this doesn't need updating per-app; falls back
   # to 1 for id-less bodies like sonarr_seasons' {seriesId, seasonNumber}.
   actual_count="$(echo "$body" | jq -r '([.[] | select(type=="array") | length] | first) // 1')"
- 
+
   if [[ "$SHSEEKARR_DRY_RUN" == "true" ]]; then
     log INFO "[DRY RUN] Would POST to ${app} /api/${api_version}/command:"
     echo "$body" | jq .
     return 0
   fi
- 
+
   log INFO "Triggering ${actual_name} on ${app} for ${actual_count} item(s)..."
   local resp
   if resp="$(api_post_command "$base_url" "$apikey" "$api_version" "$body")"; then
@@ -406,7 +405,7 @@ process_app() {
 
   local missing_file="${tmp_dir}/missing.txt"
   local cutoff_file="${tmp_dir}/cutoff.txt"
- 
+
   # Fetching is identical for all three apps (sonarr, sonarr_seasons, radarr) - only the endpoint/extra_qs/record_jq passed in differ. This is what makes SHSEEKARR_SEARCH_MODE (missing/upgrades/both/all) apply consistently to sonarr_seasons too, instead of hardcoding wanted/missing.
   if [[ "$SHSEEKARR_SEARCH_MODE" == "missing" || "$SHSEEKARR_SEARCH_MODE" == "both" || "$SHSEEKARR_SEARCH_MODE" == "all" ]]; then
     log INFO "Fetching missing items for ${app}..."
@@ -425,7 +424,7 @@ process_app() {
 
   local total_found
   total_found="$(wc -l <"$ids_file" | tr -d ' ')"
- 
+
   if [[ "$app" == "sonarr_seasons" ]]; then
     log INFO "Found ${total_found} candidate season(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
   else
@@ -460,7 +459,7 @@ process_app() {
 
   local selected_count
   selected_count="$(wc -l <"$selected_file" | tr -d ' ')"
- 
+
   if [[ "$app" == "sonarr_seasons" ]]; then
     log INFO "Randomly selected ${selected_count} season(s) (limit=${LIMIT})."
   else
@@ -471,14 +470,14 @@ process_app() {
   if ((selected_count == 0)); then
     return 0
   fi
- 
+
   # Show what was picked, by name.
   if [[ "$app" == "sonarr_seasons" ]]; then
     local sel_series sel_season sel_label body resp
- 
+
     while IFS=$'\t' read -r sel_series sel_season sel_label; do
       log INFO "Request - ${sel_label}"
-  
+
       body="$(jq -n \
         --argjson seriesId "$sel_series" \
         --argjson seasonNumber "$sel_season" \
@@ -487,7 +486,7 @@ process_app() {
     done <"$selected_file" 
   else
   local sel_id sel_label
- 
+
   while IFS=$'\t' read -r sel_id sel_label; do
     # log INFO "${sel_id}\t- ${sel_label}"
     log INFO "Request - ${sel_label}"
@@ -505,16 +504,16 @@ process_app() {
 }
 
 # ---- Main -------------------------------------------------------------------
- 
+
 main_app () {
 # Sonarr's wanted endpoints only embed the parent series (needed for the series title) if includeSeries=true is requested.
 SONARR_EXTRA_QS="&includeSeries=true"
 # jq: [id, "Series Name S01E05"] as a 2-column @tsv line. Season/episode numbers are zero-padded to 2 digits (numbers >= 100 are left as-is).
 SONARR_RECORD_JQ='[(.id|tostring), ((.series.title // "Unknown Series") + " S" + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end) + "E" + ((.episodeNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
- 
+
 # jq: [seriesId, seasonNumber, "Series Name Season 01"] as a 3-column @tsv line, one per missing episode.
 SONARR_SEASONS_RECORD_JQ='[(.seriesId|tostring), (.seasonNumber|tostring), ((.series.title // "Unknown Series") + " Season " + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
- 
+
 # Radarr's wanted endpoints return MovieResource records directly, which already carry title/year - no extra query param needed.
 RADARR_EXTRA_QS=""
 # jq: [id, "Movie Title (Year)"] as a 2-column @tsv line.
