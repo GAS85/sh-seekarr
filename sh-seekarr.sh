@@ -109,6 +109,23 @@ SHSEEKARR_READARR_LIMIT="${SHSEEKARR_READARR_LIMIT:-}"
 
 # ---- Help Variables ---------------------------------------------------------
 
+show_help() {
+    sed -n '/^#!/,/^# ---- Config/{
+        /^#!/d
+        /^# ---- Config/d
+        s/^#//
+        s/^ //
+        p
+    }' "$0"
+}
+
+case "${1:-}" in
+  -h|--help)
+    show_help
+    exit 0
+    ;;
+esac
+
 VERSION="${VERSION:-}"
 VCS_REF="${VCS_REF:-}"
 
