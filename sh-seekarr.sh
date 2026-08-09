@@ -307,7 +307,7 @@ connectivity_check() {
     if [[ "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" == "true" ]]; then
       log WARNING "$indexers_failure"
       log INFO "Will force a retest of all indexers before search. This can take some time..."
-      if api_post_command "$1" "$2" "$3" "" "/indexer/testall" >/dev/null; then
+      if api_post_command "$1" "$2" "$3" "" "/indexer/testall" >/dev/null 2>&1; then
         log INFO "All Indexers retest triggered successfully"
       else
         log WARNING "Failed to trigger indexer retest"
