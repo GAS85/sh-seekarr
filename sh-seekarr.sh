@@ -124,7 +124,7 @@ log() {
   local msg="$2"
   local fd=1
 
-  [[ "$level" == "ERROR" ]] && fd=2
+  [[ "$level" == "ERROR" || "$level" == "WARNING" ]] && fd=2
 
   if [[ ${SHSEEKARR_LOG_FORMAT} == "json" ]]; then
   #$(echo $2 | sed 's/[[:space:]]\+/ /g; s/\\t//g')
@@ -171,7 +171,7 @@ $([ -n "${SHSEEKARR_READARR_LIMIT}" ] && echo "\t\tReadarr items limit:   ${SHSE
 
 need_bin() {
   command -v "$1" >/dev/null 2>&1 || {
-    log ERROR "Missing required dependency: $1" >&2
+    log ERROR "Missing required dependency: $1"
     exit 1
   }
 }
@@ -184,28 +184,28 @@ need_bin sed
 case "$SHSEEKARR_SEARCH_MODE" in
 missing | upgrades | both | all) ;;
 *)
-  log ERROR "Invalid SHSEEKARR_SEARCH_MODE: '${SHSEEKARR_SEARCH_MODE}' (expected missing|upgrades|both|all)" >&2
+  log ERROR "Invalid SHSEEKARR_SEARCH_MODE: '${SHSEEKARR_SEARCH_MODE}' (expected missing|upgrades|both|all)"
   exit 1
   ;;
 esac
 
 if ! [[ "$SHSEEKARR_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIMIT}'"
   exit 1
 elif [[ -n "${SHSEEKARR_SONARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_SONARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_SONARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_LIMIT}'"
   exit 1
 elif [[ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_SONARR_SEASONS_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_SONARR_SEASONS_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_SEASONS_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_SONARR_SEASONS_LIMIT must be a non-negative integer, got: '${SHSEEKARR_SONARR_SEASONS_LIMIT}'"
   exit 1
 elif [[ -n "${SHSEEKARR_RADARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_RADARR_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_RADARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_RADARR_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_RADARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_RADARR_LIMIT}'"
   exit 1
 elif [[ -n "${SHSEEKARR_LIDARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_LIDARR_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_LIDARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIDARR_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_LIDARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_LIDARR_LIMIT}'"
   exit 1
 elif [[ -n "${SHSEEKARR_READARR_LIMIT:-}" ]] && ! [[ "$SHSEEKARR_READARR_LIMIT" =~ ^[0-9]+$ ]]; then
-  log ERROR "SHSEEKARR_READARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_READARR_LIMIT}'" >&2
+  log ERROR "SHSEEKARR_READARR_LIMIT must be a non-negative integer, got: '${SHSEEKARR_READARR_LIMIT}'"
   exit 1
 fi
 
@@ -213,7 +213,7 @@ case "$(echo "$SHSEEKARR_MONITORED_ONLY" | tr '[:upper:]' '[:lower:]')" in
 true | 1 | yes) MONITORED_ONLY="true" ;;
 false | 0 | no) MONITORED_ONLY="false" ;;
 *)
-  log ERROR "Invalid SHSEEKARR_MONITORED_ONLY: '${SHSEEKARR_MONITORED_ONLY}' (expected true|false)" >&2
+  log ERROR "Invalid SHSEEKARR_MONITORED_ONLY: '${SHSEEKARR_MONITORED_ONLY}' (expected true|false)"
   exit 1
   ;;
 esac
@@ -290,7 +290,7 @@ fetch_wanted_ids() {
     qs="?page=${page}&pageSize=${SHSEEKARR_PAGE_SIZE}&sortKey=id&sortDirection=ascending${extra_qs}&monitored=${MONITORED_ONLY}"
 
     if ! resp="$(api_get "$base_url" "$apikey" "$api_version" "/${endpoint}${qs}")"; then
-      log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination." >&2
+      log WARNING "Request to ${endpoint} (page ${page}) failed, stopping pagination."
       break
     fi
 
@@ -340,9 +340,9 @@ process_app_trigger_execution() {
     log INFO "$(echo "$resp" | jq -r '{id, name, status} | to_entries | map("\(.key)=\(.value)") | join(" ")' 2>/dev/null)"
   else
     if [[ "$app" == "sonarr_seasons" ]]; then
-      log WARNING "Failed to trigger SeasonSearch for seriesId=${sel_series} seasonNumber=${sel_season}." >&2
+      log WARNING "Failed to trigger SeasonSearch for seriesId=${sel_series} seasonNumber=${sel_season}."
     else
-      log WARNING "Failed to trigger search command for ${app}." >&2
+      log WARNING "Failed to trigger search command for ${app}."
     fi
   fi
 }
@@ -525,7 +525,7 @@ for raw_app in "${APPS_ARR[@]}"; do
     ;;
   "") ;;
   *)
-    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr,lidarr,readarr)" >&2
+    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr,lidarr,readarr)"
     ;;
   esac
 done
