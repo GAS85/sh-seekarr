@@ -12,61 +12,66 @@
 # ---------------------------------------------------------------------------
 # Configuration (environment variables)
 # ---------------------------------------------------------------------------
-#  SHSEEKARR_APPS                Comma separated list of apps to run.
-#                                Default: "sonarr,radarr"
+#  SHSEEKARR_APPS                    Comma separated list of apps to run.
+#                                    Default: "sonarr,radarr"
 #
-#  SHSEEKARR_SONARR_URL          Base URL of Sonarr, e.g. http://localhost:8989
-#  SHSEEKARR_SONARR_APIKEY       Sonarr API key
+#  SHSEEKARR_SONARR_URL              Base URL of Sonarr, e.g. http://localhost:8989
+#  SHSEEKARR_SONARR_APIKEY           Sonarr API key
 #
-#  SHSEEKARR_RADARR_URL          Base URL of Radarr, e.g. http://localhost:7878
-#  SHSEEKARR_RADARR_APIKEY       Radarr API key
+#  SHSEEKARR_RADARR_URL              Base URL of Radarr, e.g. http://localhost:7878
+#  SHSEEKARR_RADARR_APIKEY           Radarr API key
 #
-#  SHSEEKARR_LIDARR_URL          Base URL of Lidarr, e.g. http://localhost:8686
-#  SHSEEKARR_LIDARR_APIKEY       Lidarr API key
+#  SHSEEKARR_LIDARR_URL              Base URL of Lidarr, e.g. http://localhost:8686
+#  SHSEEKARR_LIDARR_APIKEY           Lidarr API key
 #
-#  SHSEEKARR_READARR_URL         Base URL of Readarr, e.g. http://localhost:8787
-#  SHSEEKARR_READARR_APIKEY      Readarr API key
+#  SHSEEKARR_READARR_URL             Base URL of Readarr, e.g. http://localhost:8787
+#  SHSEEKARR_READARR_APIKEY          Readarr API key
 #
-#  SHSEEKARR_SEARCH_MODE         "missing" | "upgrades" | "both" | "all"
-#                                missing  -> only wanted/missing
-#                                upgrades -> only wanted/cutoff (unmet)
-#                                both/all -> union of both, deduplicated
-#                                Default: "missing"
+#  SHSEEKARR_SEARCH_MODE             "missing" | "upgrades" | "both" | "all"
+#                                    missing  -> only wanted/missing
+#                                    upgrades -> only wanted/cutoff (unmet)
+#                                    both/all -> union of both, deduplicated
+#                                    Default: "missing"
 #
-#  SHSEEKARR_MONITORED_ONLY      "true" | "false". Default: "true"
+#  SHSEEKARR_MONITORED_ONLY          "true" | "false". Default: "true"
 #
-#  SHSEEKARR_LIMIT               Max number of items to search PER APP.
-#                                Default: 10
+#  SHSEEKARR_LIMIT                   Max number of items to search PER APP.
+#                                    Default: 10
 #
-#  SHSEEKARR_SONARR_LIMIT        Set individual of items to search for Sonarr. 
+#  SHSEEKARR_SONARR_LIMIT            Set individual of items to search for Sonarr. 
 #
-#  SHSEEKARR_RADARR_LIMIT        Set individual of items to search for Radarr. 
+#  SHSEEKARR_RADARR_LIMIT            Set individual of items to search for Radarr. 
 #
-#  SHSEEKARR_LIDARR_LIMIT        Set individual of items to search for Lidarr.
+#  SHSEEKARR_LIDARR_LIMIT            Set individual of items to search for Lidarr.
 #
-#  SHSEEKARR_READARR_LIMIT       Set individual of items to search for Readarr.
+#  SHSEEKARR_READARR_LIMIT           Set individual of items to search for Readarr.
 #
-#  SHSEEKARR_PAGE_SIZE           Page size used when paging the Sonarr/Radarr
-#                                wanted endpoints. Default: 200
+#  SHSEEKARR_PAGE_SIZE               Page size used when paging the Sonarr/Radarr
+#                                    wanted endpoints. Default: 200
 #
-#  SHSEEKARR_DRY_RUN             "true" | "false". If true, prints what would
-#                                be sent to the command API instead of POSTing
-#                                it. Default: "false"
+#  SHSEEKARR_DRY_RUN                 "true" | "false". If true, prints what would
+#                                    be sent to the command API instead of POSTing
+#                                    it. Default: "false"
 #
-#  SHSEEKARR_SCHEDULE_INTERVAL   Scheduler interval can be integer number for seconds,
-#                                or 's','m','h', or 'd', for seconds, minutes, hours, days.
+#  SHSEEKARR_INDEXER_TEST_ON_FAILURE If true, force all indexers retest on failure
+#                                    prior to search.
 #
-#  SHSEEKARR_SCHEDULE_RANDOMIZER Add some random waiting seconds to scheduler interval
+#  SHSEEKARR_SCHEDULE_INTERVAL       Scheduler interval can be integer number for
+#                                    seconds, or 's','m','h', or 'd', for seconds,
+#                                    minutes, hours, days.
 #
-#  SHSEEKARR_SEARCH_ON_START     "true" | "false". If false will search only after
-#                                SHSEEKARR_SCHEDULE_INTERVAL expired.
+#  SHSEEKARR_SCHEDULE_RANDOMIZER     Add some random waiting seconds to scheduler
+#                                    interval
 #
-#  SHSEEKARR_LOG_FORMAT          "text" or "json". Default: "text"
+#  SHSEEKARR_SEARCH_ON_START         "true" | "false". If false will search only
+#                                    after SHSEEKARR_SCHEDULE_INTERVAL expired.
+#
+#  SHSEEKARR_LOG_FORMAT              "text" or "json". Default: "text"
 #
 # An app (sonarr/radarr/lidarr/readarr) is skipped automatically if its URL
 # or API key is not configured.
 #
-# Requires: curl, jq, sort
+# Requires: curl, jq, sort, sed
 
 # ---- Config ---------------------------------------------------------------
 
@@ -76,6 +81,8 @@ SHSEEKARR_MONITORED_ONLY="${SHSEEKARR_MONITORED_ONLY:-true}"
 SHSEEKARR_LIMIT="${SHSEEKARR_LIMIT:-10}"
 SHSEEKARR_PAGE_SIZE="${SHSEEKARR_PAGE_SIZE:-200}"
 SHSEEKARR_DRY_RUN="${SHSEEKARR_DRY_RUN:-}"
+
+SHSEEKARR_INDEXER_TEST_ON_FAILURE="${SHSEEKARR_INDEXER_TEST_ON_FAILURE:-false}"
 
 SHSEEKARR_SCHEDULE_INTERVAL="${SHSEEKARR_SCHEDULE_INTERVAL:-}"
 SHSEEKARR_SCHEDULE_RANDOMIZER="${SHSEEKARR_SCHEDULE_RANDOMIZER:-false}"
@@ -148,6 +155,7 @@ log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSIO
 \t\tSearch items limit:    ${SHSEEKARR_LIMIT},
 \t\tPage size:             ${SHSEEKARR_PAGE_SIZE},
 $([ -n "${SHSEEKARR_DRY_RUN}" ] && echo "\t\tDry run:               ${SHSEEKARR_DRY_RUN},")
+$([ -n "${SHSEEKARR_INDEXER_TEST_ON_FAILURE}" ] && echo "\t\tForce Indexers retest: ${SHSEEKARR_INDEXER_TEST_ON_FAILURE},")
 $([ -n "${SHSEEKARR_SCHEDULE_INTERVAL}" ] && echo "\t\tScheduler interval:    ${SHSEEKARR_SCHEDULE_INTERVAL},")
 $([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo "\t\tScheduler randomizer:  enabled,")
 $([ "${SHSEEKARR_SEARCH_ON_START}" = "false" ] && echo "\t\tSearch on start:       disabled,")
@@ -223,6 +231,11 @@ true | 1 | yes) SHSEEKARR_DRY_RUN="true" ;;
 *) SHSEEKARR_DRY_RUN="false" ;;
 esac
 
+case "$(echo "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" | tr '[:upper:]' '[:lower:]')" in
+true | 1 | yes) SHSEEKARR_INDEXER_TEST_ON_FAILURE="true" ;;
+*) SHSEEKARR_INDEXER_TEST_ON_FAILURE="false" ;;
+esac
+
 case "$(echo "$SHSEEKARR_SEARCH_ON_START" | tr '[:upper:]' '[:lower:]')" in
 true | 1 | yes) SHSEEKARR_SEARCH_ON_START="true" ;;
 *) SHSEEKARR_SEARCH_ON_START="false" ;;
@@ -242,12 +255,14 @@ api_get() {
 }
 
 api_post_command() {
-  # $1=base_url $2=apikey $3=api_version $4=json body
+  # $1=base_url $2=apikey $3=api_version $4=json body $5=custom path
+  # Set default path if not set
+  local path="${5:-/command}"
   curl -fsS --max-time 30 \
     -H "X-Api-Key: ${2}" \
     -H "Content-Type: application/json" \
     -X POST -d "${4}" \
-    "${1%/}/api/${3}/command"
+    "${1%/}/api/${3}${path}"
 }
 
 api_version_for() {
@@ -262,17 +277,39 @@ api_version_for() {
 connectivity_check() {
   # $1=base_url $2=apikey $3=api_version
   local connectivityCheck
-  connectivityCheck="$(curl -sL -m 3 --retry 1 -o /dev/null -w %{http_code} -H "X-Api-Key: ${2}" "${1%/}/api/${3}/wanted/missing?page=0&pageSize=1" 2>&1 || true )"
+  local http_code
+  local health_json
+  connectivityCheck="$(curl -sL -m 3 --retry 1 -w '\n%{http_code}' -H "X-Api-Key: ${2}" "${1%/}/api/${3}/health" 2>&1 || true )"
+
+  http_code="${connectivityCheck##*$'\n'}"
+  health_json="${connectivityCheck%$'\n'*}"
+
+  # Check if indecers are failing in long term
+  if jq -e '.[] | select(.source == "IndexerLongTermStatusCheck" and .type == "warning")' <<< "$health_json" >/dev/null; then
+    indexers_failure="Long-term indexer failure detected"
+    if [[ "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" == "true" ]]; then
+      log WARNING "$indexers_failure"
+      log INFO "Will force a retest of all indexers before search. This can take some time..."
+      if api_post_command "$1" "$2" "$3" "" "/indexer/testall" >/dev/null; then
+        log INFO "All Indexers retest triggered successfully"
+      else
+        log WARNING "Failed to trigger indexer retest"
+      fi
+    else
+      log WARNING "$indexers_failure. You can force all indexers to be retested before the search request by setting 'SHSEEKARR_INDEXER_TEST_ON_FAILURE' to 'true'"
+    fi
+  fi
+  exit 0
 
 	# This is success
-	[[ "$connectivityCheck" == "200" ]] && return
+	[[ "$http_code" == "200" ]] && return
 
 	# This is an error
-	[[ "$connectivityCheck" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
-	[[ "$connectivityCheck" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
-	[[ "$connectivityCheck" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/${3}"; exit 1; }
-	[[ "$connectivityCheck" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/${3}"; exit 1 ; }
-	[[ "$connectivityCheck" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
+	[[ "$http_code" == "400" ]] && { log ERROR "Bad Request"; exit 1; }
+	[[ "$http_code" == "401" ]] && { log ERROR "Unauthorized. Please check API Token"; exit 1; }
+	[[ "$http_code" == "404" ]] && { log ERROR "Not Found under ${1%/}/api/${3}"; exit 1; }
+	[[ "$http_code" == "500" ]] && { log ERROR "Server Error by calling ${1%/}/api/${3}"; exit 1 ; }
+	[[ "$http_code" == "000" ]] && { log ERROR "Host is not reachable. Please check if Server and Port are correct. Current config is ${1%/}"; exit 1 ; }
 
 }
 
