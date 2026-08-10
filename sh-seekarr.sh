@@ -69,7 +69,7 @@
 #                                    minutes, hours, days.
 #
 #  SHSEEKARR_SCHEDULE_RANDOMIZER     Add some random waiting seconds to scheduler
-#                                    interval
+#                                    interval within 1 hour.
 #
 #  SHSEEKARR_SEARCH_ON_START         "true" | "false". If false will search only
 #                                    after SHSEEKARR_SCHEDULE_INTERVAL expired.
@@ -163,7 +163,7 @@ log() {
     jq -cn \
       --arg component "$app" \
       --arg level "$level" \
-      --arg msg "$(echo $msg | sed 's/[[:space:]]\+/ /g; s/\\t//g')" \
+      --arg msg "$(echo "$msg" | sed 's/[[:space:]]\+/ /g; s/\\t//g')" \
       --arg time "$(ts)" \
       '{component: $component, level: $level, msg: $msg, time: $time}' >&"$fd"
   else
@@ -173,31 +173,31 @@ log() {
 
 # ---- Startup summary --------------------------------------------------------
 
-log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSION}")$([ -n "${VCS_REF}" ] && echo " build ${VCS_REF:0:8}").
+log INFO "Welcome to SH Seekarr$([ -n "${VERSION}" ] && echo " version: ${VERSION}")$([ -n "${VCS_REF}" ] && echo -e " build ${VCS_REF:0:8}").
 \t\tApps enabled:          ${SHSEEKARR_APPS},
 \t\tSearch Mode:           ${SHSEEKARR_SEARCH_MODE},
 \t\tSearch Monitored only: ${SHSEEKARR_MONITORED_ONLY},
 \t\tSearch items limit:    ${SHSEEKARR_LIMIT},
 \t\tPage size:             ${SHSEEKARR_PAGE_SIZE},
-$([ -n "${SHSEEKARR_DRY_RUN}" ] && echo "\t\tDry run:               ${SHSEEKARR_DRY_RUN},")
-$([ -n "${SHSEEKARR_INDEXER_TEST_ON_FAILURE}" ] && echo "\t\tForce Indexers retest: ${SHSEEKARR_INDEXER_TEST_ON_FAILURE},")
-$([ -n "${SHSEEKARR_SCHEDULE_INTERVAL}" ] && echo "\t\tScheduler interval:    ${SHSEEKARR_SCHEDULE_INTERVAL},")
-$([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo "\t\tScheduler randomizer:  enabled,")
-$([ "${SHSEEKARR_SEARCH_ON_START}" = "false" ] && echo "\t\tSearch on start:       disabled,")
+$([ -n "${SHSEEKARR_DRY_RUN}" ] && echo -e "\t\tDry run:               ${SHSEEKARR_DRY_RUN},")
+$([ -n "${SHSEEKARR_INDEXER_TEST_ON_FAILURE}" ] && echo -e "\t\tForce Indexers retest: ${SHSEEKARR_INDEXER_TEST_ON_FAILURE},")
+$([ -n "${SHSEEKARR_SCHEDULE_INTERVAL}" ] && echo -e "\t\tScheduler interval:    ${SHSEEKARR_SCHEDULE_INTERVAL},")
+$([ "${SHSEEKARR_SCHEDULE_RANDOMIZER}" = "true" ] && echo -e "\t\tScheduler randomizer:  enabled,")
+$([ "${SHSEEKARR_SEARCH_ON_START}" = "false" ] && echo -e "\t\tSearch on start:       disabled,")
 \t\tLog format:            ${SHSEEKARR_LOG_FORMAT},
-$([ -n "${SHSEEKARR_SONARR_URL}" ] && echo "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
-$([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo "\t\tSonarr API Key:        set,")
-$([ -n "${SHSEEKARR_SONARR_LIMIT}" ] && echo "\t\tSonarr items limit:    ${SHSEEKARR_SONARR_LIMIT},")
-$([ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT}" ] && echo "\t\tSonarr seasons limit:  ${SHSEEKARR_SONARR_SEASONS_LIMIT},")
-$([ -n "${SHSEEKARR_RADARR_URL}" ] && echo "\t\tRadarr URL:            ${SHSEEKARR_RADARR_URL},")
-$([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo "\t\tRadarr API Key:        set,")
-$([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT},")
-$([ -n "${SHSEEKARR_LIDARR_URL}" ] && echo "\t\tLidarr URL:            ${SHSEEKARR_LIDARR_URL},")
-$([ -n "${SHSEEKARR_LIDARR_APIKEY}" ] && echo "\t\tLidarr API Key:        set,")
-$([ -n "${SHSEEKARR_LIDARR_LIMIT}" ] && echo "\t\tLidarr items limit:    ${SHSEEKARR_LIDARR_LIMIT},")
-$([ -n "${SHSEEKARR_READARR_URL}" ] && echo "\t\tReadarr URL:           ${SHSEEKARR_READARR_URL},")
-$([ -n "${SHSEEKARR_READARR_APIKEY}" ] && echo "\t\tReadarr API Key:       set,")
-$([ -n "${SHSEEKARR_READARR_LIMIT}" ] && echo "\t\tReadarr items limit:   ${SHSEEKARR_READARR_LIMIT}")
+$([ -n "${SHSEEKARR_SONARR_URL}" ] && echo -e "\t\tSonarr URL:            ${SHSEEKARR_SONARR_URL},")
+$([ -n "${SHSEEKARR_SONARR_APIKEY}" ] && echo -e "\t\tSonarr API Key:        set,")
+$([ -n "${SHSEEKARR_SONARR_LIMIT}" ] && echo -e "\t\tSonarr items limit:    ${SHSEEKARR_SONARR_LIMIT},")
+$([ -n "${SHSEEKARR_SONARR_SEASONS_LIMIT}" ] && echo -e "\t\tSonarr seasons limit:  ${SHSEEKARR_SONARR_SEASONS_LIMIT},")
+$([ -n "${SHSEEKARR_RADARR_URL}" ] && echo -e "\t\tRadarr URL:            ${SHSEEKARR_RADARR_URL},")
+$([ -n "${SHSEEKARR_RADARR_APIKEY}" ] && echo -e "\t\tRadarr API Key:        set,")
+$([ -n "${SHSEEKARR_RADARR_LIMIT}" ] && echo -e "\t\tRadarr items limit:    ${SHSEEKARR_RADARR_LIMIT},")
+$([ -n "${SHSEEKARR_LIDARR_URL}" ] && echo -e "\t\tLidarr URL:            ${SHSEEKARR_LIDARR_URL},")
+$([ -n "${SHSEEKARR_LIDARR_APIKEY}" ] && echo -e "\t\tLidarr API Key:        set,")
+$([ -n "${SHSEEKARR_LIDARR_LIMIT}" ] && echo -e "\t\tLidarr items limit:    ${SHSEEKARR_LIDARR_LIMIT},")
+$([ -n "${SHSEEKARR_READARR_URL}" ] && echo -e "\t\tReadarr URL:           ${SHSEEKARR_READARR_URL},")
+$([ -n "${SHSEEKARR_READARR_APIKEY}" ] && echo -e "\t\tReadarr API Key:       set,")
+$([ -n "${SHSEEKARR_READARR_LIMIT}" ] && echo -e "\t\tReadarr items limit:   ${SHSEEKARR_READARR_LIMIT}")
 "
 
 # ---- Sanity checks ----------------------------------------------------------
@@ -266,7 +266,7 @@ true | 1 | yes) SHSEEKARR_SEARCH_ON_START="true" ;;
 *) SHSEEKARR_SEARCH_ON_START="false" ;;
 esac
 
-if [[ ${SHSEEKARR_SEARCH_ON_START} == false ]] && [[ ! -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
+if [[ ${SHSEEKARR_SEARCH_ON_START} == false ]] && [[ -z ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
   log WARNING "You disabled search on start, but didn't not set any Schedule Interval. Will ignore this setting"
 fi
 
@@ -453,7 +453,7 @@ process_app() {
   if [[ "$app" == "sonarr_seasons" ]]; then
     log INFO "Found ${total_found} candidate season(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
   else
-  log INFO "Found ${total_found} candidate item(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
+    log INFO "Found ${total_found} candidate item(s) for ${app} after filtering (monitoredOnly=${MONITORED_ONLY})."
   fi 
 
   if ((total_found == 0)); then
@@ -488,7 +488,7 @@ process_app() {
   if [[ "$app" == "sonarr_seasons" ]]; then
     log INFO "Randomly selected ${selected_count} season(s) (limit=${LIMIT})."
   else
-  log INFO "Randomly selected ${selected_count} item(s) (limit=${LIMIT})."
+    log INFO "Randomly selected ${selected_count} item(s) (limit=${LIMIT})."
   fi
 
   # Is there is nothing to work with, exit this function
@@ -510,20 +510,19 @@ process_app() {
       process_app_trigger_execution
     done <"$selected_file" 
   else
-  local sel_id sel_label
+    local sel_label
 
-  while IFS=$'\t' read -r sel_id sel_label; do
-    # log INFO "${sel_id}\t- ${sel_label}"
-    log INFO "Request - ${sel_label}"
-  done <"$selected_file"
+    while IFS=$'\t' read -r sel_label; do
+      log INFO "Request - ${sel_label}"
+    done <"$selected_file"
 
-  local ids_json body
-  ids_json="$(cut -f1 "$selected_file" | jq -R -s -c 'split("\n") | map(select(length > 0) | tonumber)')"
-  body="$(jq -n \
-    --arg name "$command_name" \
-    --argjson ids "$ids_json" \
-    --arg field "$id_field" \
-    '{name: $name} + {($field): $ids}')"
+    local ids_json body
+    ids_json="$(cut -f1 "$selected_file" | jq -R -s -c 'split("\n") | map(select(length > 0) | tonumber)')"
+    body="$(jq -n \
+      --arg name "$command_name" \
+      --argjson ids "$ids_json" \
+      --arg field "$id_field" \
+      '{name: $name} + {($field): $ids}')"
     process_app_trigger_execution
   fi
 }
@@ -531,70 +530,70 @@ process_app() {
 # ---- Main -------------------------------------------------------------------
 
 main_app () {
-# Sonarr's wanted endpoints only embed the parent series (needed for the series title) if includeSeries=true is requested.
-SONARR_EXTRA_QS="&includeSeries=true"
-# jq: [id, "Series Name S01E05"] as a 2-column @tsv line. Season/episode numbers are zero-padded to 2 digits (numbers >= 100 are left as-is).
-SONARR_RECORD_JQ='[(.id|tostring), ((.series.title // "Unknown Series") + " S" + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end) + "E" + ((.episodeNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
+  # Sonarr's wanted endpoints only embed the parent series (needed for the series title) if includeSeries=true is requested.
+  SONARR_EXTRA_QS="&includeSeries=true"
+  # jq: [id, "Series Name S01E05"] as a 2-column @tsv line. Season/episode numbers are zero-padded to 2 digits (numbers >= 100 are left as-is).
+  SONARR_RECORD_JQ='[(.id|tostring), ((.series.title // "Unknown Series") + " S" + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end) + "E" + ((.episodeNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
 
-# jq: [seriesId, seasonNumber, "Series Name Season 01"] as a 3-column @tsv line, one per missing episode.
-SONARR_SEASONS_RECORD_JQ='[(.seriesId|tostring), (.seasonNumber|tostring), ((.series.title // "Unknown Series") + " Season " + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
+  # jq: [seriesId, seasonNumber, "Series Name Season 01"] as a 3-column @tsv line, one per missing episode.
+  SONARR_SEASONS_RECORD_JQ='[(.seriesId|tostring), (.seasonNumber|tostring), ((.series.title // "Unknown Series") + " Season " + ((.seasonNumber|tostring) | if (length < 2) then "0" + . else . end))] | @tsv'
 
-# Radarr's wanted endpoints return MovieResource records directly, which already carry title/year - no extra query param needed.
-RADARR_EXTRA_QS=""
-# jq: [id, "Movie Title (Year)"] as a 2-column @tsv line.
-RADARR_RECORD_JQ='[(.id|tostring), ((.title // "Unknown Movie") + " (" + ((.year // "?")|tostring) + ")")] | @tsv'
+  # Radarr's wanted endpoints return MovieResource records directly, which already carry title/year - no extra query param needed.
+  RADARR_EXTRA_QS=""
+  # jq: [id, "Movie Title (Year)"] as a 2-column @tsv line.
+  RADARR_RECORD_JQ='[(.id|tostring), ((.title // "Unknown Movie") + " (" + ((.year // "?")|tostring) + ")")] | @tsv'
 
-# Lidarr's wanted endpoints only embed the parent artist (needed for the artist name) if includeArtist=true is requested.
-LIDARR_EXTRA_QS="&includeArtist=true"
-# jq: [id, "Artist Name - Album Title"] as a 2-column @tsv line.
-LIDARR_RECORD_JQ='[(.id|tostring), ((.artist.artistName // "Unknown Artist") + " - " + (.title // "Unknown Album"))] | @tsv'
+  # Lidarr's wanted endpoints only embed the parent artist (needed for the artist name) if includeArtist=true is requested.
+  LIDARR_EXTRA_QS="&includeArtist=true"
+  # jq: [id, "Artist Name - Album Title"] as a 2-column @tsv line.
+  LIDARR_RECORD_JQ='[(.id|tostring), ((.artist.artistName // "Unknown Artist") + " - " + (.title // "Unknown Album"))] | @tsv'
 
-# Readarr's wanted endpoints only embed the parent author (needed for the author name) if includeAuthor=true is requested.
-READARR_EXTRA_QS="&includeAuthor=true"
-# jq: [id, "Author Name - Book Title"] as a 2-column @tsv line.
-READARR_RECORD_JQ='[(.id|tostring), ((.author.authorName // "Unknown Author") + " - " + (.title // "Unknown Book"))] | @tsv'
+  # Readarr's wanted endpoints only embed the parent author (needed for the author name) if includeAuthor=true is requested.
+  READARR_EXTRA_QS="&includeAuthor=true"
+  # jq: [id, "Author Name - Book Title"] as a 2-column @tsv line.
+  READARR_RECORD_JQ='[(.id|tostring), ((.author.authorName // "Unknown Author") + " - " + (.title // "Unknown Book"))] | @tsv'
 
-IFS=',' read -ra APPS_ARR <<<"$SHSEEKARR_APPS"
+  IFS=',' read -ra APPS_ARR <<<"$SHSEEKARR_APPS"
 
-for raw_app in "${APPS_ARR[@]}"; do
-  app="$(echo "$raw_app" | xargs | tr '[:upper:]' '[:lower:]')"
-  case "$app" in
-  sonarr)
-    process_app "sonarr" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr)" \
-      "wanted/missing" "wanted/cutoff" "episodeIds" "EpisodeSearch" \
-      "$SONARR_EXTRA_QS" "$SONARR_RECORD_JQ"
-    ;;
-  sonarr_seasons)
-    process_app "sonarr_seasons" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr_seasons)" \
-      "wanted/missing" "wanted/cutoff" "" "" \
-      "$SONARR_EXTRA_QS" "$SONARR_SEASONS_RECORD_JQ"
-    ;;
-  radarr)
-    process_app "radarr" "$SHSEEKARR_RADARR_URL" "$SHSEEKARR_RADARR_APIKEY" "$(api_version_for radarr)" \
-      "wanted/missing" "wanted/cutoff" "movieIds" "MoviesSearch" \
-      "$RADARR_EXTRA_QS" "$RADARR_RECORD_JQ"
-    ;;
-  lidarr)
-    process_app "lidarr" "$SHSEEKARR_LIDARR_URL" "$SHSEEKARR_LIDARR_APIKEY" "$(api_version_for lidarr)" \
-      "wanted/missing" "wanted/cutoff" "albumIds" "AlbumSearch" \
-      "$LIDARR_EXTRA_QS" "$LIDARR_RECORD_JQ"
-    ;;
-  readarr)
-    process_app "readarr" "$SHSEEKARR_READARR_URL" "$SHSEEKARR_READARR_APIKEY" "$(api_version_for readarr)" \
-      "wanted/missing" "wanted/cutoff" "bookIds" "BookSearch" \
-      "$READARR_EXTRA_QS" "$READARR_RECORD_JQ"
-    ;;
-  "") ;;
-  *)
-    log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr,lidarr,readarr)"
-    ;;
-  esac
-done
+  for raw_app in "${APPS_ARR[@]}"; do
+    app="$(echo "$raw_app" | xargs | tr '[:upper:]' '[:lower:]')"
+    case "$app" in
+    sonarr)
+      process_app "sonarr" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr)" \
+        "wanted/missing" "wanted/cutoff" "episodeIds" "EpisodeSearch" \
+        "$SONARR_EXTRA_QS" "$SONARR_RECORD_JQ"
+      ;;
+    sonarr_seasons)
+      process_app "sonarr_seasons" "$SHSEEKARR_SONARR_URL" "$SHSEEKARR_SONARR_APIKEY" "$(api_version_for sonarr_seasons)" \
+        "wanted/missing" "wanted/cutoff" "" "" \
+        "$SONARR_EXTRA_QS" "$SONARR_SEASONS_RECORD_JQ"
+      ;;
+    radarr)
+      process_app "radarr" "$SHSEEKARR_RADARR_URL" "$SHSEEKARR_RADARR_APIKEY" "$(api_version_for radarr)" \
+        "wanted/missing" "wanted/cutoff" "movieIds" "MoviesSearch" \
+        "$RADARR_EXTRA_QS" "$RADARR_RECORD_JQ"
+      ;;
+    lidarr)
+      process_app "lidarr" "$SHSEEKARR_LIDARR_URL" "$SHSEEKARR_LIDARR_APIKEY" "$(api_version_for lidarr)" \
+        "wanted/missing" "wanted/cutoff" "albumIds" "AlbumSearch" \
+        "$LIDARR_EXTRA_QS" "$LIDARR_RECORD_JQ"
+      ;;
+    readarr)
+      process_app "readarr" "$SHSEEKARR_READARR_URL" "$SHSEEKARR_READARR_APIKEY" "$(api_version_for readarr)" \
+        "wanted/missing" "wanted/cutoff" "bookIds" "BookSearch" \
+        "$READARR_EXTRA_QS" "$READARR_RECORD_JQ"
+      ;;
+    "") ;;
+    *)
+      log ERROR "Unknown app in SHSEEKARR_APPS: '${app}' (expected all, or one of: sonarr,sonarr_seasons,radarr,lidarr,readarr)"
+      ;;
+    esac
+  done
 }
 
 # Wrapped to function to enable TA
 main() {
-if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
+  if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
     random_sleep=""
 
     # If search on start disabled. skip it till next round
@@ -608,24 +607,24 @@ if [[ -n ${SHSEEKARR_SCHEDULE_INTERVAL} ]]; then
     # Infinity loop with periodical check
     while :
     do
-        # Add randomizer between 1 and 3600 seconds
-        if [[ ${SHSEEKARR_SCHEDULE_RANDOMIZER} == "true" ]]; then
-            random_sleep="$(echo $((1 + $RANDOM % 3600)))"
-        fi
-        app="main"
-        log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL $([ -n "${random_sleep:-}" ] && echo "plus ${random_sleep} seconds")"
-        sleep ${SHSEEKARR_SCHEDULE_INTERVAL} ${random_sleep}
-        main_app
+      # Add randomizer between 1 and 3600 seconds
+      if [[ ${SHSEEKARR_SCHEDULE_RANDOMIZER} == "true" ]]; then
+        random_sleep="$((1 + RANDOM % 3600))"
+      fi
+      app="main"
+      log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL $([ -n "${random_sleep:-}" ] && echo "plus ${random_sleep} seconds")"
+      sleep "${SHSEEKARR_SCHEDULE_INTERVAL}" "${random_sleep}"
+      main_app
     done
-else
-  main_app
-fi
+  else
+    main_app
+  fi
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   main
 
-app="main"
-log INFO "All done."
-exit 0
+  app="main"
+  log INFO "All done."
+  exit 0
 fi
