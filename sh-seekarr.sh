@@ -9,6 +9,14 @@
 # just those items. Designed to keep memory low: only numeric ids are ever
 # held in memory/disk, never full episode/movie/series JSON objects.
 #
+# Execution:
+#
+# ./sh-seekarr.sh
+#
+# See help:
+#
+# ./sh-seekarr.sh [-h|--help]
+#
 # ---------------------------------------------------------------------------
 # Configuration (environment variables)
 # ---------------------------------------------------------------------------
@@ -116,7 +124,7 @@ show_help() {
         s/^#//
         s/^ //
         p
-    }' "$0"
+        }' "$0" | more
 }
 
 case "${1:-}" in
@@ -275,7 +283,7 @@ api_post_command() {
   # $1=base_url $2=apikey $3=api_version $4=json body $5=custom path (starting with /, e.g. /wanted/missing?...)
   # Set default path if not set
   local path="${5:-/command}"
-  curl -fsS --max-time 30 \
+  curl -sS --max-time 45 \
     -H "X-Api-Key: ${2}" \
     -H "Content-Type: application/json" \
     -X POST -d "${4}" \
@@ -307,7 +315,7 @@ connectivity_check() {
     if [[ "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" == "true" ]]; then
       log WARNING "$indexers_failure"
       log INFO "Will force a retest of all indexers before search. This can take some time..."
-      if resp="$(api_post_command "$1" "$2" "$3" "" "/indexer/testall" >/dev/null)"; then
+      if resp="$(api_post_command "$1" "$2" "$3" "" "/indexer/testall" 2>&1 >/dev/null)"; then
         log INFO "All Indexers retest triggered successfully"
       else
         log WARNING "Failed to trigger indexer retest"

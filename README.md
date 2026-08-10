@@ -55,6 +55,12 @@ export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
 ./seekarr.sh
 ```
 
+Get help:
+
+```bash
+./sh-seekarr.sh -h
+```
+
 Run it on a schedule (cron, systemd timer, build in scheduler, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
 
 ### Docker
@@ -69,6 +75,12 @@ docker run --name sh-seekarr \
 	gas85/sh-seekarr:latest
 ```
 
+Get help:
+
+```bash
+docker run gas85/sh-seekarr:latest bash /app/sh-seekarr.sh -h
+```
+
 ### Docker-compose
 
 Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml) example.
@@ -76,6 +88,8 @@ Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/ma
 ## Configuration reference
 
 All configuration is via environment variables, prefixed `SHSEEKARR_`.
+
+You can get help by calling script with a `-h` or `--help` argument.
 
 ### Connection
 
