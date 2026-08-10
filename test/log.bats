@@ -20,7 +20,7 @@ load_script() {
     }
 }
 
-@test "log: INFO goes to stdout in text format" {
+@test "log INFO goes to stdout in text format" {
     load_script text
 
     stdout="$(mktemp)"
@@ -36,7 +36,7 @@ load_script() {
 }
 
 
-@test "log: DEBUG goes to stdout in text format" {
+@test "log DEBUG goes to stdout in text format" {
     load_script text
 
     stdout="$(mktemp)"
@@ -52,7 +52,7 @@ load_script() {
 }
 
 
-@test "log: WARNING goes to stderr in text format" {
+@test "log WARNING goes to stderr in text format" {
     load_script text
 
     stdout="$(mktemp)"
@@ -68,7 +68,7 @@ load_script() {
 }
 
 
-@test "log: ERROR goes to stderr in text format" {
+@test "log ERROR goes to stderr in text format" {
     load_script text
 
     stdout="$(mktemp)"
@@ -84,7 +84,7 @@ load_script() {
 }
 
 
-@test "log: INFO produces valid JSON" {
+@test "log INFO produces valid JSON" {
     load_script json
 
     stdout="$(mktemp)"
@@ -105,7 +105,7 @@ load_script() {
 }
 
 
-@test "log: ERROR produces JSON on stderr" {
+@test "log ERROR produces JSON on stderr" {
     load_script json
 
     stdout="$(mktemp)"
@@ -126,7 +126,7 @@ load_script() {
 }
 
 
-@test "log: WARNING produces JSON on stderr" {
+@test "log WARNING produces JSON on stderr" {
     load_script json
 
     stdout="$(mktemp)"
@@ -147,7 +147,7 @@ load_script() {
 }
 
 
-@test "log: JSON preserves special characters" {
+@test "log JSON preserves special characters" {
     load_script json
 
     stdout="$(mktemp)"
@@ -159,8 +159,7 @@ load_script() {
     jq -e '.msg == "hello \"world\" / test"' "$stdout"
 }
 
-
-@test "log: JSON normalizes whitespace" {
+@test "log JSON normalizes whitespace" {
     load_script json
 
     stdout="$(mktemp)"
@@ -170,10 +169,10 @@ load_script() {
     log INFO $'hello   world\nthis\tis   a test' >"$stdout" 2>"$stderr"
 
     jq -e '.msg == "hello world this is a test"' "$stdout"
+
 }
 
-
-@test "log: component comes from app" {
+@test "log component comes from app" {
     load_script json
 
     stdout="$(mktemp)"
@@ -192,7 +191,7 @@ load_script() {
 }
 
 
-@test "log: multiline text removes empty lines" {
+@test "log multiline text removes empty lines" {
     load_script text
 
     stdout="$(mktemp)"
