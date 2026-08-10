@@ -159,11 +159,10 @@ log() {
   [[ "$level" == "ERROR" || "$level" == "WARNING" ]] && fd=2
 
   if [[ ${SHSEEKARR_LOG_FORMAT} == "json" ]]; then
-  #$(echo $2 | sed 's/[[:space:]]\+/ /g; s/\\t//g')
     jq -cn \
       --arg component "$app" \
       --arg level "$level" \
-      --arg msg "$(echo "$msg" | sed 's/[[:space:]]\+/ /g; s/\\t//g')" \
+      --arg msg "$(echo $msg | sed 's/[[:space:]]\+/ /g; s/\\t//g')" \
       --arg time "$(ts)" \
       '{component: $component, level: $level, msg: $msg, time: $time}' >&"$fd"
   else
