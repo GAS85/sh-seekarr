@@ -55,6 +55,12 @@ export SHSEEKARR_RADARR_APIKEY="your-radarr-api-key"
 ./seekarr.sh
 ```
 
+Get help:
+
+```bash
+./sh-seekarr.sh -h
+```
+
 Run it on a schedule (cron, systemd timer, build in scheduler, a Sonarr/Radarr *Custom Script* trigger, etc.) to periodically nudge your indexers toward filling gaps and upgrading files, without ever doing a full-library blast search.
 
 ### Docker
@@ -69,6 +75,12 @@ docker run --name sh-seekarr \
 	gas85/sh-seekarr:latest
 ```
 
+Get help:
+
+```bash
+docker run gas85/sh-seekarr:latest bash /app/sh-seekarr.sh -h
+```
+
 ### Docker-compose
 
 Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/main/docker-compose.yml) example.
@@ -76,6 +88,8 @@ Please refer to [docker-compose.yml](https://github.com/GAS85/sh-seekarr/blob/ma
 ## Configuration reference
 
 All configuration is via environment variables, prefixed `SHSEEKARR_`.
+
+You can get help by calling script with a `-h` or `--help` argument.
 
 ### Connection
 
@@ -112,6 +126,7 @@ If an app's URL or API key isn't set, that app is skipped with a log message rat
 | `SHSEEKARR_READARR_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_LIMIT` for Readarr only. |
 | `SHSEEKARR_SONARR_SEASONS_LIMIT` | *(unset)* | If set, overrides `SHSEEKARR_SONARR_SEASONS_LIMIT` for Sonarr only, when requesting whole seasons instead of episodes. |
 | `SHSEEKARR_PAGE_SIZE` | `200` | Page size used when paging the `wanted/*` endpoints. Larger values mean fewer HTTP round-trips but bigger individual responses. |
+| `SHSEEKARR_INDEXER_TEST_ON_FAILURE` | `false` | `true`/`false` (also accepts `1`/`0`, `yes`/`no`). If `true`, force all indexers retest on failure prior to search |
 
 **Note on limits:** `SHSEEKARR_LIMIT` and its per-app overrides are applied *independently* per app - e.g. `SHSEEKARR_LIMIT=10` with both Sonarr and Radarr enabled can trigger up to 10 searches on Sonarr **and** up to 10 on Radarr, not 10 combined.
 
