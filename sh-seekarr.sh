@@ -309,7 +309,7 @@ connectivity_check() {
   health_json="${connectivityCheck%$'\n'*}"
 
   # Check if indexers have been failing long-term
-  if jq -e '.[] | select(.source == "IndexerLongTermStatusCheck" and .type == "warning")' <<< "$health_json" >/dev/null; then
+  if jq -e '.[] | select((.source == "IndexerStatusCheck" or .source == "IndexerLongTermStatusCheck") and .type == "warning")' <<< "$health_json" >/dev/null; then
     indexers_failure="Long-term indexer failure detected"
     if [[ "$SHSEEKARR_INDEXER_TEST_ON_FAILURE" == "true" ]]; then
       log WARNING "$indexers_failure"
