@@ -4,8 +4,8 @@
 #
 # https://github.com/GAS85/sh-seekarr
 #
-# Queries Sonarr and/or Radarr for missing / cutoff-unmet (upgrade) items,
-# randomly selects up to a configurable limit, and triggers a search for
+# Queries Sonarr, Radarr, Lidarr, Readarr for missing / cutoff-unmet (upgrade)
+# items, randomly selects up to a configurable limit, and triggers a search for
 # just those items. Designed to keep memory low: only numeric ids are ever
 # held in memory/disk, never full episode/movie/series JSON objects.
 #
@@ -610,9 +610,22 @@ main() {
       if [[ ${SHSEEKARR_SCHEDULE_RANDOMIZER} == "true" ]]; then
         random_sleep="$((1 + RANDOM % 3600))"
       fi
+
+      # Calculate "till" time
+      case "$SHSEEKARR_SCHEDULE_INTERVAL" in
+          *y) interval_seconds=$(( ${SHSEEKARR_SCHEDULE_INTERVAL%y} * 31536000 )) ;;
+          *d) interval_seconds=$(( ${SHSEEKARR_SCHEDULE_INTERVAL%d} * 86400 )) ;;
+          *h) interval_seconds=$(( ${SHSEEKARR_SCHEDULE_INTERVAL%h} * 3600 )) ;;
+          *m) interval_seconds=$(( ${SHSEEKARR_SCHEDULE_INTERVAL%m} * 60 )) ;;
+          *s) interval_seconds=$(( ${SHSEEKARR_SCHEDULE_INTERVAL%s} )) ;;
+          *)  interval_seconds=$SHSEEKARR_SCHEDULE_INTERVAL ;;
+      esac
+      sleep_seconds=$((interval_seconds + ${random_sleep:-0}))
+      wake_at=$(date -d "@$(($(date +%s) + sleep_seconds))" '+%d-%m-%Y %H:%M:%S')
+
       app="main"
-      log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL $([ -n "${random_sleep:-}" ] && echo "plus ${random_sleep} seconds")"
-      sleep "${SHSEEKARR_SCHEDULE_INTERVAL}" "${random_sleep}"
+      log INFO "Will sleep for a $SHSEEKARR_SCHEDULE_INTERVAL$([ -n "${random_sleep:-}" ] && echo " plus ${random_sleep} seconds"). Until $wake_at"
+      sleep "${sleep_seconds}"
       main_app
     done
   else

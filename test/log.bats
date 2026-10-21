@@ -172,7 +172,7 @@ load_script() {
 
 }
 
-@test "log component comes from app" {
+@test "log JSON component comes from app" {
     load_script json
 
     stdout="$(mktemp)"
