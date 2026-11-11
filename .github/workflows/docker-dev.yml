@@ -5,6 +5,9 @@ on:
       - dev
       - dev-*
 
+permissions:
+  contents: read
+
 jobs:
   test:
     uses: ./.github/workflows/test.yml
